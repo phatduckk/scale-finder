@@ -11,7 +11,7 @@
 
 body {
   font-family: 'Nunito', system-ui, sans-serif;
-  background: #080d1a;
+  background: #0c0e18;
   color: #f8f8f2;
   height: 100vh;
   overflow: hidden;
@@ -30,8 +30,8 @@ body {
 .sidebar {
   width: 260px;
   min-width: 260px;
-  background: #16181f;
-  border-right: 1px solid #2a2c3a;
+  background: #0e1018;
+  border-right: 1px solid #181a28;
   display: flex;
   flex-direction: column;
   transition: width 0.22s cubic-bezier(0.4,0,0.2,1), min-width 0.22s cubic-bezier(0.4,0,0.2,1);
@@ -48,7 +48,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 18px 16px 14px;
-  border-bottom: 1px solid #2a2c3a;
+  border-bottom: 1px solid #181a28;
   flex-shrink: 0;
 }
 .sidebar-title {
@@ -56,16 +56,16 @@ body {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #6272a4;
+  color: #3c4268;
   flex: 1;
   white-space: nowrap;
 }
 .sidebar-new-btn {
   width: 24px; height: 24px;
   border-radius: 6px;
-  border: 1px solid #44475a;
+  border: 1px solid #24263a;
   background: transparent;
-  color: #6272a4;
+  color: #3c4268;
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
@@ -85,11 +85,11 @@ body {
 }
 .sidebar-list::-webkit-scrollbar { width: 4px; }
 .sidebar-list::-webkit-scrollbar-track { background: transparent; }
-.sidebar-list::-webkit-scrollbar-thumb { background: #44475a; border-radius: 2px; }
+.sidebar-list::-webkit-scrollbar-thumb { background: #24263a; border-radius: 2px; }
 
 .sidebar-empty {
   text-align: center;
-  color: #44475a;
+  color: #2a2c48;
   font-size: 12px;
   font-weight: 600;
   margin-top: 40px;
@@ -123,14 +123,14 @@ body {
 
 .hdr-sub {
   font-size: 13px;
-  color: #6272a4;
+  color: #3c4268;
   margin-top: 4px;
   font-weight: 600;
 }
 
 /* ── CARD ── */
 .card {
-  background: #282a36;
+  background: #13151f;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.4), 0 8px 32px rgba(0,0,0,0.3);
   padding: 24px;
@@ -142,7 +142,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6272a4;
+  color: #3c4268;
   margin-bottom: 18px;
 }
 
@@ -158,9 +158,9 @@ body {
   min-width: 0;
   height: 60px;
   border-radius: 12px;
-  border: 2px solid #44475a;
-  background: #383a4a;
-  color: #f8f8f2;
+  border: 2px solid #24263a;
+  background: #1a1c2c;
+  color: #5a6290;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -173,8 +173,8 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .note-btn .nn { font-size: 16px; line-height: 1; }
-.note-btn:hover { border-color: #6272a4; background: #44475a; color: #f8f8f2; }
-.note-btn.on { background: #001e36; border-color: #1a6aaa; color: #31a8ff; box-shadow: 0 2px 8px rgba(49,168,255,0.3); }
+.note-btn:hover { border-color: #4a5080; background: #20223a; color: #a0a8d0; }
+.note-btn.on { background: #182448; border-color: #3a5898; color: #8aaae0; box-shadow: 0 2px 8px rgba(58,88,152,0.4); }
 
 
 /* ── CONTROLS ── */
@@ -187,13 +187,13 @@ body {
   gap: 8px;
 }
 
-.inst-tog { display: flex; background: #21222c; border-radius: 8px; padding: 3px; gap: 2px; }
+.inst-tog { display: flex; background: #13141e; border-radius: 8px; padding: 3px; gap: 2px; }
 
 .inst-btn {
   padding: 6px 16px;
   border: none;
   background: transparent;
-  color: #6272a4;
+  color: #3c4268;
   font-family: 'Nunito', sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -201,13 +201,13 @@ body {
   border-radius: 6px;
   transition: all 0.12s;
 }
-.inst-btn.on { background: #44475a; color: #f8f8f2; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.inst-btn.on { background: #20223a; color: #a0a8d0; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 
 .btn-clear {
   padding: 7px 18px;
-  border: 2px solid #44475a;
+  border: 2px solid #1e2235;
   background: transparent;
-  color: #6272a4;
+  color: #3c4268;
   font-family: 'Nunito', sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -219,9 +219,9 @@ body {
 
 .btn-import {
   padding: 7px 18px;
-  border: 2px solid #6272a4;
-  background: #383a4a;
-  color: #bd93f9;
+  border: 2px solid #2a1e58;
+  background: #16123a;
+  color: #6050b8;
   font-family: 'Nunito', sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -229,12 +229,12 @@ body {
   border-radius: 8px;
   transition: all 0.12s;
 }
-.btn-import:hover { background: #44475a; border-color: #bd93f9; }
+.btn-import:hover { background: #1e1a48; border-color: #6050b8; }
 
 /* ── EMPTY STATE ── */
 .empty-msg {
   text-align: center;
-  color: #6272a4;
+  color: #3c4268;
   font-size: 14px;
   font-weight: 600;
   padding: 32px 0;
@@ -248,7 +248,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6272a4;
+  color: #3c4268;
   margin-bottom: 10px;
 }
 
@@ -259,12 +259,12 @@ body {
   border-radius: 20px;
   font-size: 12px;
   font-weight: 700;
-  background: #383a4a;
-  color: #b2b6c3;
-  border: 2px solid #44475a;
+  background: #1a1c2c;
+  color: #4a5280;
+  border: 2px solid #20223a;
 }
-.chip.top { background: #44475a; color: #cba6f7; border-color: #6272a4; }
-.chip.top:first-child { background: #001e36; color: #31a8ff; border-color: #1a6aaa; }
+.chip.top { background: #1c1438; color: #8060d0; border-color: #4a30a0; }
+.chip.top:first-child { background: #18224a; color: #7098e0; border-color: #3a5898; }
 
 /* ── SCALE GROUPS ── */
 .scale-group { margin-bottom: 24px; }
@@ -274,9 +274,9 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6272a4;
+  color: #3c4268;
   padding-bottom: 8px;
-  border-bottom: 1px solid #44475a;
+  border-bottom: 1px solid #1e2235;
   margin-bottom: 10px;
 }
 
@@ -287,8 +287,8 @@ body {
 }
 
 .scale-card {
-  background: #383a4a;
-  border: 2px solid #44475a;
+  background: #1a1c28;
+  border: 2px solid #1e2235;
   border-radius: 12px;
   padding: 18px 20px;
   transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
@@ -296,8 +296,8 @@ body {
   cursor: pointer;
 }
 .scale-card:hover {
-  border-color: #bd93f9;
-  box-shadow: 0 4px 12px rgba(189,147,249,0.2);
+  border-color: #4a30a0;
+  box-shadow: 0 4px 12px rgba(74,48,160,0.25);
   transform: translateY(-1px);
 }
 .scale-card.picked {
@@ -310,9 +310,9 @@ body {
   width: 26px;
   height: 26px;
   border-radius: 6px;
-  border: 2px solid #44475a;
-  background: #44475a;
-  color: #6272a4;
+  border: 2px solid #20223a;
+  background: #20223a;
+  color: #3c4268;
   font-size: 17px;
   font-weight: 700;
   line-height: 1;
@@ -328,8 +328,8 @@ body {
 
 .scale-card-hdr { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
 .scale-root { font-size: 26px; font-weight: 800; color: #f8f8f2; line-height: 1; }
-.scale-name { font-size: 14px; font-weight: 600; color: #b2b6c3; flex: 1; }
-.scale-count { font-size: 13px; font-weight: 700; color: #b2b6c3; }
+.scale-name { font-size: 14px; font-weight: 600; color: #505880; flex: 1; }
+.scale-count { font-size: 13px; font-weight: 700; color: #505880; }
 
 /* ── SCALE NOTE PILLS ── */
 .note-row { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -347,14 +347,14 @@ body {
   font-size: 13px;
   font-weight: 700;
 }
-.snote.scale        { background: rgba(98,114,164,0.5); color: #b2b6c3; border-color: rgba(98,114,164,0.5); }
-.snote.match        { background: #001e36; color: #31a8ff; border-color: #0d4870; }
-.snote.triad-root   { background: #001e36; color: #31a8ff; border-color: #1a6aaa; }
-.snote.triad-third  { background: #2a1000; color: #ff9540; border-color: #703010; }
-.snote.triad-fifth  { background: #1a082c; color: #c470ff; border-color: #501890; }
-.snote.triad-root.match  { border-color: #1a6aaa; }
-.snote.triad-third.match { border-color: #703010; }
-.snote.triad-fifth.match { border-color: #501890; }
+.snote.scale        { background: #1c1e30; color: #383c58; border-color: #1c1e30; }
+.snote.match        { background: #15224a; color: #5a80c8; border-color: #283870; }
+.snote.triad-root   { background: #15224a; color: #7098e0; border-color: #3a5898; }
+.snote.triad-third  { background: #0d2820; color: #2ecf8a; border-color: #1a5840; }
+.snote.triad-fifth  { background: #180e38; color: #8060d0; border-color: #381878; }
+.snote.triad-root.match  { border-color: #4a70b8; }
+.snote.triad-third.match { border-color: #2a7850; }
+.snote.triad-fifth.match { border-color: #502898; }
 
 /* ── MODAL OVERLAY ── */
 .modal-overlay {
@@ -467,9 +467,9 @@ body {
   background: #f1f5f9;
   color: #64748b;
 }
-.modal-note.is-root  { background: #001e36; color: #31a8ff; }
-.modal-note.is-third { background: #2a1000; color: #ff9540; }
-.modal-note.is-fifth { background: #1a082c; color: #c470ff; }
+.modal-note.is-root  { background: #15224a; color: #7098e0; }
+.modal-note.is-third { background: #0d2820; color: #2ecf8a; }
+.modal-note.is-fifth { background: #180e38; color: #8060d0; }
 
 /* Legend */
 .modal-legend {
@@ -491,9 +491,9 @@ body {
   height: 12px;
   border-radius: 50%;
 }
-.legend-dot.root  { background: #31a8ff; }
-.legend-dot.third { background: #ff9540; }
-.legend-dot.fifth { background: #c470ff; }
+.legend-dot.root  { background: #7098e0; }
+.legend-dot.third { background: #2ecf8a; }
+.legend-dot.fifth { background: #8060d0; }
 .legend-dot.other { background: #e2e8f0; border: 1.5px solid #cbd5e1; }
 
 /* Instrument tabs inside modal */
@@ -637,9 +637,9 @@ body {
   color: #475569;
   border: 2px solid #94a3b8;
 }
-.ndot.is-root  { background: #001e36; color: #31a8ff; border-color: #1a6aaa; }
-.ndot.is-third { background: #2a1000; color: #ff9540; border-color: #703010; }
-.ndot.is-fifth { background: #1a082c; color: #c470ff; border-color: #501890; }
+.ndot.is-root  { background: #15224a; color: #7098e0; border-color: #3a5898; }
+.ndot.is-third { background: #0d2820; color: #2ecf8a; border-color: #1a5840; }
+.ndot.is-fifth { background: #180e38; color: #8060d0; border-color: #381878; }
 .ndot.user-dimmed { opacity: 0.15; cursor: pointer; }
 .ndot { cursor: pointer; }
 
@@ -668,8 +668,8 @@ body {
 .btn-library {
   padding: 6px 14px;
   background: transparent;
-  color: #6272a4;
-  border: 1px solid #44475a;
+  color: #3c4268;
+  border: 1px solid #20223a;
   border-radius: 8px;
   font-family: 'Nunito', sans-serif;
   font-size: 12px;
@@ -680,8 +680,8 @@ body {
   gap: 6px;
   transition: all 0.12s;
 }
-.btn-library:hover { border-color: #6272a4; color: #f8f8f2; }
-.btn-library.open { border-color: #bd93f9; color: #bd93f9; }
+.btn-library:hover { border-color: #4a5080; color: #a0a8d0; }
+.btn-library.open { border-color: #6050b8; color: #8060d0; }
 .btn-library svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
 /* ── SAVE BUTTON ── */
@@ -708,8 +708,8 @@ body {
   cursor: pointer;
   transition: background 0.1s, border-color 0.1s;
 }
-.song-item:hover { background: #282a36; border-color: #44475a; }
-.song-item.active { background: #282a36; border-color: #6272a4; }
+.song-item:hover { background: #13151f; border-color: #24263a; }
+.song-item.active { background: #13151f; border-color: #3a5898; }
 
 .song-item-top {
   display: flex;
@@ -729,7 +729,7 @@ body {
 .song-item-date {
   font-size: 10px;
   font-weight: 600;
-  color: #44475a;
+  color: #2a2c48;
   white-space: nowrap;
 }
 .song-item-delete {
@@ -737,7 +737,7 @@ body {
   border-radius: 5px;
   border: none;
   background: transparent;
-  color: #44475a;
+  color: #2a2c48;
   cursor: pointer;
   font-size: 13px;
   display: flex; align-items: center; justify-content: center;
@@ -756,10 +756,10 @@ body {
   border-radius: 4px;
   font-size: 10px;
   font-weight: 700;
-  background: #383a4a;
-  color: #6272a4;
+  background: #1a1c2c;
+  color: #2e3050;
 }
-.song-note-pill.active { background: #001e36; color: #31a8ff; }
+.song-note-pill.active { background: #15224a; color: #5a80c8; }
 
 /* ── SAVE MODAL ── */
 .save-overlay {
@@ -861,7 +861,7 @@ body {
   padding: 3px 10px;
   border: none;
   background: transparent;
-  color: #6272a4;
+  color: #3c4268;
   font-family: 'Nunito', sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -870,7 +870,7 @@ body {
   transition: all 0.12s;
   line-height: 1.4;
 }
-.acc-btn.on { background: #44475a; color: #f8f8f2; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+.acc-btn.on { background: #20223a; color: #8aaae0; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
 /* ── MY SCALES ── */
 .my-scales-section { margin-bottom: 20px; }
@@ -890,7 +890,7 @@ body {
 .picked-hint {
   font-size: 12px;
   font-weight: 600;
-  color: #6272a4;
+  color: #3c4268;
 }
 
 /* ── ANIMATIONS ── */
