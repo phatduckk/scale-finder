@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scale Finder — Guitar & Bass</title>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -16,13 +17,13 @@ body {
 }
 
 .wrap {
-  max-width: 940px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px 80px;
+  padding: 40px 24px 80px;
 }
 
 /* ── HEADER ── */
-.hdr { text-align: center; margin-bottom: 32px; }
+.hdr { text-align: center; margin-bottom: 20px; }
 
 .hdr h1 {
   font-size: clamp(28px, 5vw, 40px);
@@ -61,13 +62,13 @@ body {
 .note-grid {
   display: flex;
   gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
 }
 
 .note-btn {
-  width: 64px;
-  height: 64px;
+  flex: 1;
+  min-width: 0;
+  height: 60px;
   border-radius: 12px;
   border: 2px solid #e2e8f0;
   background: #fff;
@@ -130,6 +131,20 @@ body {
 }
 .btn-clear:hover { border-color: #fca5a5; color: #ef4444; background: #fff5f5; }
 
+.btn-import {
+  padding: 7px 18px;
+  border: 2px solid #bfdbfe;
+  background: #eff6ff;
+  color: #2563eb;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s;
+}
+.btn-import:hover { background: #dbeafe; border-color: #93c5fd; }
+
 /* ── EMPTY STATE ── */
 .empty-msg {
   text-align: center;
@@ -181,7 +196,7 @@ body {
 
 .scale-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 8px;
 }
 
@@ -206,23 +221,29 @@ body {
 .scale-count { font-size: 11px; font-weight: 700; color: #cbd5e1; }
 
 /* ── SCALE NOTE PILLS ── */
-.note-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.note-row { display: flex; flex-wrap: nowrap; gap: 4px; overflow: hidden; }
 
 .snote {
-  min-width: 32px;
-  height: 28px;
-  padding: 0 6px;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  padding: 0;
   border-radius: 6px;
+  border: 2px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
   font-weight: 700;
 }
-.snote.scale  { background: #f1f5f9; color: #94a3b8; }
-.snote.match  { background: #dbeafe; color: #2563eb; }
-.snote.root   { background: #e2e8f0; color: #334155; outline: 2px solid #94a3b8; outline-offset: -2px; }
-.snote.root.match { background: #3b82f6; color: #fff; outline: 2px solid #1d4ed8; outline-offset: -2px; }
+.snote.scale        { background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; }
+.snote.match        { background: #dbeafe; color: #2563eb; border-color: #93c5fd; }
+.snote.triad-root   { background: #3b82f6; color: #fff; border-color: #1d4ed8; }
+.snote.triad-third  { background: #f97316; color: #fff; border-color: #ea580c; }
+.snote.triad-fifth  { background: #8b5cf6; color: #fff; border-color: #7c3aed; }
+.snote.triad-root.match  { border-color: #1d4ed8; }
+.snote.triad-third.match { border-color: #ea580c; }
+.snote.triad-fifth.match { border-color: #7c3aed; }
 
 /* ── MODAL OVERLAY ── */
 .modal-overlay {
@@ -544,7 +565,6 @@ body {
 
   <div class="hdr">
     <h1>Scale <span>Finder</span></h1>
-    <div class="hdr-sub">Guitar &amp; Bass Theory Tool</div>
   </div>
 
   <!-- INPUT -->
@@ -552,11 +572,11 @@ body {
     <div class="card-title">Pick Your Notes</div>
     <div class="note-grid" id="note-grid"></div>
     <div class="ctrl-row">
-      <div class="inst-tog">
-        <button class="inst-btn on" data-inst="guitar">Guitar</button>
-        <button class="inst-btn"   data-inst="bass">Bass</button>
+      <div style="display:flex;gap:8px;margin-left:auto;">
+        <label class="btn-import" for="file-import">Import file</label>
+        <button class="btn-clear" id="btn-clear">Clear</button>
+        <input type="file" id="file-import" accept=".pdf,.txt,.tab,.pro,.chord" style="display:none">
       </div>
-      <button class="btn-clear" id="btn-clear">Clear</button>
     </div>
   </div>
 
@@ -690,13 +710,6 @@ function refreshButtons() {
 
 // ── INSTRUMENT TOGGLE ─────────────────────────────────────────────────────────
 
-document.querySelectorAll('.inst-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    instrument = b.dataset.inst;
-    document.querySelectorAll('.inst-btn').forEach(x => x.classList.toggle('on', x === b));
-  });
-});
-
 document.getElementById('btn-clear').addEventListener('click', () => {
   sel.clear(); refreshButtons(); analyze();
 });
@@ -741,7 +754,7 @@ function analyze() {
   topKeys.forEach((m, i) => {
     const cls = 'chip' + (i < 3 ? ' top' : '');
     const alias = m.scale.alias ? ` <span style="opacity:.55;font-weight:600;font-size:10px;">(${m.scale.alias})</span>` : '';
-    html += `<div class="${cls}">${NOTES[m.root]} ${m.scale.name}${alias}</div>`;
+    html += `<div class="${cls}" onclick="openScaleModal(${m.root},'${m.scale.name}')" style="cursor:pointer">${NOTES[m.root]} ${m.scale.name}${alias}</div>`;
   });
   html += '</div></div>';
 
@@ -776,12 +789,11 @@ function buildCard(m, input, idx) {
 
   let pills = '';
   for (const ni of orderedNotes) {
-    const isInput = input.includes(ni), isRoot = ni === m.root;
+    const isInput = input.includes(ni);
+    const role = noteRole(ni, m.root, m.scale);
     let cls = 'snote';
-    if (isRoot && isInput) cls += ' root match';
-    else if (isRoot)       cls += ' root';
-    else if (isInput)      cls += ' match';
-    else                   cls += ' scale';
+    if (role !== 'scale') cls += ` triad-${role}${isInput ? ' match' : ''}`;
+    else                  cls += isInput ? ' match' : ' scale';
     pills += `<div class="${cls}">${NOTES[ni]}</div>`;
   }
 
@@ -820,7 +832,6 @@ function openScaleModal(root, scaleName) {
 
   modalRoot = root;
   modalScaleName = scaleName;
-  modalInstrument = instrument;
 
   document.getElementById('modal-root').textContent = NOTES[root];
   document.getElementById('modal-scale-name').textContent = scaleName;
@@ -983,6 +994,85 @@ document.querySelectorAll('.modal-inst-btn').forEach(b => {
     const scale = SCALES.find(s => s.name === modalScaleName);
     if (scale) renderFretboard(modalRoot, scale);
   });
+});
+
+// ── FILE IMPORT ───────────────────────────────────────────────────────────────
+
+const NOTE_TO_IDX = {
+  'C':0,'C#':1,'Db':1,'D':2,'D#':3,'Eb':3,'E':4,
+  'F':5,'F#':6,'Gb':6,'G':7,'G#':8,'Ab':8,'A':9,'A#':10,'Bb':10,'B':11
+};
+
+// Guitar string open notes (low E to high e)
+const TAB_STRINGS = {
+  'E':4, 'A':9, 'D':2, 'G':7, 'B':11, 'e':4
+};
+
+function parseChords(text) {
+  const found = new Set();
+  // Split on whitespace and separators, grab first [A-G][#b]? from each token
+  for (const token of text.split(/[\s,|()\[\]\/\-\\]+/)) {
+    const m = token.match(/^([A-G][#b]?)/);
+    if (m && NOTE_TO_IDX[m[1]] !== undefined) found.add(NOTE_TO_IDX[m[1]]);
+  }
+  return found;
+}
+
+function parseTabs(text) {
+  const found = new Set();
+  // Match lines like:  e|--0--3--5--|  or  E |--0--3--|
+  const tabLine = /^([EADGBe])\s*\|([^\n]+)/gm;
+  let m;
+  while ((m = tabLine.exec(text)) !== null) {
+    const stringLabel = m[1];
+    const open = TAB_STRINGS[stringLabel];
+    if (open === undefined) continue;
+    // Extract all fret numbers from this line
+    for (const fret of m[2].matchAll(/\d+/g)) {
+      found.add((open + parseInt(fret[0])) % 12);
+    }
+  }
+  return found;
+}
+
+function applyImportedNotes(notes) {
+  if (notes.size === 0) { alert('No recognizable notes or chords found in this file.'); return; }
+  sel.clear();
+  notes.forEach(n => sel.add(n));
+  refreshButtons();
+  analyze();
+}
+
+async function extractPdfText(file) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const data = await file.arrayBuffer();
+  const pdf  = await pdfjsLib.getDocument({ data }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page    = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(it => it.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+document.getElementById('file-import').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+
+  let text;
+  if (file.name.endsWith('.pdf')) {
+    text = await extractPdfText(file);
+  } else {
+    text = await file.text();
+  }
+
+  // Try tab notation first (more specific); fall back to chord names
+  const tabNotes = parseTabs(text);
+  const notes = tabNotes.size > 0 ? tabNotes : parseChords(text);
+  applyImportedNotes(notes);
 });
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
