@@ -4,6 +4,8 @@ A music theory tool for guitarists and bassists. Pick notes, find matching scale
 
 ![Scale Finder](https://raw.githubusercontent.com/phatduckk/scale-finder/main/screenshot.png)
 
+![Fretboard Modal](https://raw.githubusercontent.com/phatduckk/scale-finder/main/screenshot-modal.png)
+
 ## Features
 
 - **Note input** — click the 12 chromatic note buttons to build your note set
