@@ -133,20 +133,46 @@ body {
   white-space: nowrap;
   overflow: hidden;
 }
-.sidebar-new-btn {
-  width: 22px; height: 22px;
+.sidebar-action-btn {
+  width: 24px; height: 24px;
   border-radius: 5px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
-  font-size: 16px;
-  line-height: 1;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.12s;
   flex-shrink: 0;
 }
-.sidebar-new-btn:hover { border-color: var(--accent-green-text); color: var(--accent-green-text); }
+.sidebar-action-btn:hover { border-color: var(--accent-green-text); color: var(--accent-green-text); }
+
+.sidebar-current {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: none;
+}
+.sidebar-current.visible { display: block; }
+.sidebar-panel.collapsed .sidebar-current { display: none; }
+.sidebar-current-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-excluded);
+  display: block;
+  margin-bottom: 3px;
+}
+.sidebar-current-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-green-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
 
 .sidebar-list {
   flex: 1;
@@ -404,18 +430,18 @@ body {
 .inst-btn.on { background: var(--accent-blue-bg); color: var(--accent-blue-text); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 
 .btn-clear {
-  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 7px;
   border: 1px solid var(--border);
-  background: transparent;
+  background: var(--bg-input);
   color: var(--text-muted);
-  font-family: 'Nunito', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+  border-radius: 6px;
   cursor: pointer;
-  border-radius: 20px;
   transition: all 0.12s;
 }
-.btn-clear:hover { border-color: #ff5555; color: #ff5555; background: transparent; }
+.btn-clear:hover { border-color: #ff5555; color: #ff5555; background: var(--bg-input); }
 
 .btn-import {
   padding: 10px 20px;
@@ -1133,7 +1159,21 @@ body {
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v8.5a2.5 2.5 0 1 1-2-2.449V5l6-2v7.5a2.5 2.5 0 1 1-2-2.449V3.333L9 3z"/></svg>
       </div>
       <span class="sidebar-title">Library</span>
-      <button class="sidebar-new-btn" onclick="openSaveModal()" title="Save current">+</button>
+      <label class="sidebar-action-btn" for="file-import" title="Import file">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M7 1v8M4 6l3 3 3-3"/><path d="M2 10v1.5A1.5 1.5 0 003.5 13h7a1.5 1.5 0 001.5-1.5V10"/>
+        </svg>
+      </label>
+      <input type="file" id="file-import" accept=".pdf,.txt,.tab,.pro,.chord" style="display:none">
+      <button class="sidebar-action-btn" id="btn-save" onclick="openSaveModal()" title="Save current notes">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 13H3a1 1 0 01-1-1V2a1 1 0 011-1h6.5L13 4.5V12a1 1 0 01-1 1z"/><path d="M9 1v3.5H4.5"/><path d="M4 8.5h6M4 11h4"/>
+        </svg>
+      </button>
+    </div>
+    <div class="sidebar-current" id="sidebar-current">
+      <span class="sidebar-current-label">Now editing</span>
+      <span class="sidebar-current-name" id="sidebar-current-name"></span>
     </div>
     <div class="sidebar-list" id="drawer-list">
       <div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>
@@ -1179,20 +1219,17 @@ body {
   <div class="card">
     <div style="display:flex;align-items:center;margin-bottom:12px;">
       <div class="card-title" style="margin-bottom:0;flex:1;">Pick Your Notes</div>
-      <div class="acc-tog" id="main-acc-tog">
+      <button class="btn-clear" id="btn-clear" title="Clear all notes">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1.5 3.5h10M4.5 3.5V2.5A.75.75 0 015.25 1.75h2.5A.75.75 0 018.5 2.5v1M3 3.5l.75 7a.75.75 0 00.748.75h4a.75.75 0 00.748-.75L10 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="acc-tog" id="main-acc-tog" style="margin-left:10px;">
         <button class="acc-btn" id="acc-sharp" onclick="setAccidental(false)">#</button>
         <button class="acc-btn" id="acc-flat" onclick="setAccidental(true)">♭</button>
       </div>
     </div>
     <div class="note-grid" id="note-grid"></div>
-    <div class="ctrl-row">
-      <div style="display:flex;gap:8px;margin-left:auto;">
-        <button class="btn-save" id="btn-save">Save</button>
-        <label class="btn-import" for="file-import">Import file</label>
-        <button class="btn-clear" id="btn-clear">Clear</button>
-        <input type="file" id="file-import" accept=".pdf,.txt,.tab,.pro,.chord" style="display:none">
-      </div>
-    </div>
   </div>
 
   <!-- RESULTS -->
@@ -1452,7 +1489,7 @@ function togglePick(root, scaleName) {
 }
 
 document.getElementById('btn-clear').addEventListener('click', () => {
-  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; refreshButtons(); analyze();
+  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; updateCurrentSongDisplay(); refreshButtons(); analyze();
 });
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
@@ -2052,11 +2089,23 @@ async function loadDrawer() {
   }).join('');
 }
 
+function updateCurrentSongDisplay() {
+  const strip = document.getElementById('sidebar-current');
+  const name  = document.getElementById('sidebar-current-name');
+  if (currentSong) {
+    name.textContent = currentSong.name;
+    strip.classList.add('visible');
+  } else {
+    strip.classList.remove('visible');
+  }
+}
+
 function loadSong(idx) {
   const song   = drawerSongs[idx];
   const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
   const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
   currentSong  = { id: song.id, name: song.name };
+  updateCurrentSongDisplay();
   sel.clear();
   notes.forEach(n => sel.add(n));
   pickedScales.clear();
@@ -2114,7 +2163,9 @@ async function confirmSave() {
   }
 
   try {
-    await saveSong(name, [...sel], [...pickedScales]);
+    const saved = await saveSong(name, [...sel], [...pickedScales]);
+    currentSong = { id: saved.id, name: saved.name };
+    updateCurrentSongDisplay();
     closeSaveModal();
     loadDrawer();
   } catch (err) {
@@ -2137,7 +2188,9 @@ async function overwriteSave() {
   if (conflictId) await deleteSong(conflictId);
   conflictId = null;
   try {
-    await saveSong(name, [...sel], [...pickedScales]);
+    const saved = await saveSong(name, [...sel], [...pickedScales]);
+    currentSong = { id: saved.id, name: saved.name };
+    updateCurrentSongDisplay();
     closeSaveModal();
     loadDrawer();
   } catch (err) {
@@ -2155,7 +2208,6 @@ function renameSave() {
   input.focus();
 }
 
-document.getElementById('btn-save').addEventListener('click', openSaveModal);
 document.getElementById('save-cancel').addEventListener('click', closeSaveModal);
 document.getElementById('save-confirm').addEventListener('click', confirmSave);
 document.getElementById('save-overwrite').addEventListener('click', overwriteSave);
