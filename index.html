@@ -1016,6 +1016,7 @@ const NUM_FRETS = 12;
 
 const sel = new Set();
 const pickedScales = new Set(); // "root:scaleName" keys
+let currentSong = null;         // { id, name } of the loaded song, if any
 let instrument = 'guitar';
 let modalInstrument = 'guitar';
 let modalRoot = 0;
@@ -1083,11 +1084,12 @@ function refreshButtons() {
 function togglePick(root, scaleName) {
   const key = `${root}:${scaleName}`;
   pickedScales.has(key) ? pickedScales.delete(key) : pickedScales.add(key);
+  if (currentSong) updateSong(currentSong.id, { scales: [...pickedScales] }).catch(() => {});
   analyze();
 }
 
 document.getElementById('btn-clear').addEventListener('click', () => {
-  sel.clear(); pickedScales.clear(); refreshButtons(); analyze();
+  sel.clear(); pickedScales.clear(); currentSong = null; refreshButtons(); analyze();
 });
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
@@ -1501,6 +1503,20 @@ async function deleteSong(id) {
   await fetch(`${API}/songs/${id}`, { method: 'DELETE' });
 }
 
+async function updateSong(id, patch) {
+  if (!IS_SERVED) {
+    const songs = lsGetSongs();
+    const i = songs.findIndex(s => s.id === id);
+    if (i !== -1) { Object.assign(songs[i], patch); localStorage.setItem('sf_songs', JSON.stringify(songs)); }
+    return;
+  }
+  await fetch(`${API}/songs/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+}
+
 async function fetchSettings() {
   if (!IS_SERVED) return lsGetSettings();
   const res = await fetch(`${API}/settings`);
@@ -1570,6 +1586,7 @@ function loadSong(idx) {
   const song   = drawerSongs[idx];
   const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
   const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
+  currentSong  = { id: song.id, name: song.name };
   sel.clear();
   notes.forEach(n => sel.add(n));
   pickedScales.clear();

@@ -60,6 +60,19 @@ app.post('/api/songs', async (req, res) => {
   }
 });
 
+// Update a song
+app.patch('/api/songs/:id', async (req, res) => {
+  const { notes, scales } = req.body;
+  const sets = [], vals = [];
+  if (notes  !== undefined) { sets.push('notes = ?');  vals.push(JSON.stringify(notes)); }
+  if (scales !== undefined) { sets.push('scales = ?'); vals.push(JSON.stringify(scales)); }
+  if (!sets.length) return res.status(400).json({ error: 'nothing to update' });
+  vals.push(req.params.id);
+  await pool.query(`UPDATE songs SET ${sets.join(', ')} WHERE id = ?`, vals);
+  const [rows] = await pool.query('SELECT * FROM songs WHERE id = ?', [req.params.id]);
+  res.json(rows[0]);
+});
+
 // Delete a song
 app.delete('/api/songs/:id', async (req, res) => {
   await pool.query('DELETE FROM songs WHERE id = ?', [req.params.id]);
