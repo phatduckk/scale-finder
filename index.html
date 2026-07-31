@@ -985,6 +985,43 @@ body {
 }
 .acc-btn.on { background: var(--accent-blue-bg); color: var(--accent-blue-text); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
+/* ── CHORD INPUT ── */
+.chord-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  align-items: center;
+}
+.chord-input {
+  flex: 1;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.chord-input::placeholder { color: var(--text-muted); font-weight: 600; }
+.chord-input:focus { border-color: var(--accent-blue-border); }
+.chord-input-btn {
+  padding: 9px 18px;
+  border: 1px solid var(--accent-blue-border);
+  background: var(--accent-blue-bg);
+  color: var(--accent-blue-text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.chord-input-btn:hover { background: var(--accent-blue-border); color: #fff; }
+
 /* ── MY SCALES ── */
 .my-scales-section { margin-bottom: 28px; }
 .picked-hint {
@@ -1095,6 +1132,10 @@ body {
       </div>
     </div>
     <div class="note-grid" id="note-grid"></div>
+    <div class="chord-input-row">
+      <input type="text" id="chord-input" class="chord-input" placeholder="Type chords e.g. Em G D Am C…" autocomplete="off" spellcheck="false">
+      <button class="chord-input-btn" onclick="addChordsFromInput()">Add chords</button>
+    </div>
     <div class="ctrl-row">
       <div style="display:flex;gap:8px;margin-left:auto;">
         <button class="btn-save" id="btn-save">Save</button>
@@ -1630,12 +1671,40 @@ const TAB_STRINGS = {
   'E':4, 'A':9, 'D':2, 'G':7, 'B':11, 'e':4
 };
 
+const CHORD_INTERVALS = {
+  'maj':   [0,4,7],
+  'm':     [0,3,7],
+  '5':     [0,7],
+  'dim':   [0,3,6],
+  'aug':   [0,4,8],
+  '7':     [0,4,7,10],
+  'maj7':  [0,4,7,11],
+  'm7':    [0,3,7,10],
+  'mM7':   [0,3,7,11],
+  'm7b5':  [0,3,6,10],
+  'dim7':  [0,3,6,9],
+  'sus2':  [0,2,7],
+  'sus4':  [0,5,7],
+  'add9':  [0,2,4,7],
+  'madd9': [0,2,3,7],
+  '9':     [0,4,7,10,14],
+  'm9':    [0,3,7,10,14],
+};
+
+function chordToNotes(token) {
+  const m = token.match(/^([A-G][#b]?)(m7b5|mM7|maj7|m7|dim7|dim|aug|sus2|sus4|madd9|add9|m9|m|5|7|9)?/i);
+  if (!m) return [];
+  const root = NOTE_TO_IDX[m[1]];
+  if (root === undefined) return [];
+  const quality = m[2] ? m[2].replace(/^M/, 'maj') : 'maj';
+  const ivs = CHORD_INTERVALS[quality] || CHORD_INTERVALS['maj'];
+  return ivs.map(iv => (root + iv) % 12);
+}
+
 function parseChords(text) {
   const found = new Set();
-  // Split on whitespace and separators, grab first [A-G][#b]? from each token
   for (const token of text.split(/[\s,|()\[\]\/\-\\]+/)) {
-    const m = token.match(/^([A-G][#b]?)/);
-    if (m && NOTE_TO_IDX[m[1]] !== undefined) found.add(NOTE_TO_IDX[m[1]]);
+    chordToNotes(token).forEach(n => found.add(n));
   }
   return found;
 }
@@ -1664,6 +1733,22 @@ function applyImportedNotes(notes) {
   refreshButtons();
   analyze();
 }
+
+function addChordsFromInput() {
+  const input = document.getElementById('chord-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const notes = parseChords(text);
+  if (notes.size === 0) return;
+  notes.forEach(n => sel.add(n));
+  input.value = '';
+  refreshButtons();
+  analyze();
+}
+
+document.getElementById('chord-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addChordsFromInput();
+});
 
 async function extractPdfText(file) {
   pdfjsLib.GlobalWorkerOptions.workerSrc =
