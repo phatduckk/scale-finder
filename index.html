@@ -1003,6 +1003,7 @@ function noteName(idx) {
 
 function setAccidental(flats) {
   useFlats = flats;
+  saveSetting('useFlats', flats ? '1' : '0').catch(() => {});
   analyze();
   const overlay = document.getElementById('modal-overlay');
   if (overlay.classList.contains('open')) {
@@ -1610,6 +1611,10 @@ buildNoteGrid();
 fetchSettings().then(s => {
   if (s.instrument === 'guitar' || s.instrument === 'bass') {
     modalInstrument = s.instrument;
+  }
+  if (s.useFlats === '1') {
+    useFlats = true;
+    analyze();
   }
 }).catch(() => {});
 </script>
