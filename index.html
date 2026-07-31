@@ -13,11 +13,99 @@ body {
   font-family: 'Nunito', system-ui, sans-serif;
   background: #080d1a;
   color: #f8f8f2;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+
+/* ── APP LAYOUT ── */
+.app-layout {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar {
+  width: 260px;
+  min-width: 260px;
+  background: #16181f;
+  border-right: 1px solid #2a2c3a;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.22s cubic-bezier(0.4,0,0.2,1), min-width 0.22s cubic-bezier(0.4,0,0.2,1);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 16px 14px;
+  border-bottom: 1px solid #2a2c3a;
+  flex-shrink: 0;
+}
+.sidebar-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6272a4;
+  flex: 1;
+  white-space: nowrap;
+}
+.sidebar-new-btn {
+  width: 24px; height: 24px;
+  border-radius: 6px;
+  border: 1px solid #44475a;
+  background: transparent;
+  color: #6272a4;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+.sidebar-new-btn:hover { border-color: #50fa7b; color: #50fa7b; }
+
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar-list::-webkit-scrollbar { width: 4px; }
+.sidebar-list::-webkit-scrollbar-track { background: transparent; }
+.sidebar-list::-webkit-scrollbar-thumb { background: #44475a; border-radius: 2px; }
+
+.sidebar-empty {
+  text-align: center;
+  color: #44475a;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 40px;
+  padding: 0 16px;
+  line-height: 1.6;
+}
+
+/* ── MAIN CONTENT ── */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
 }
 
 .wrap {
-  max-width: 1200px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 40px 24px 80px;
 }
@@ -578,27 +666,23 @@ body {
 
 /* ── LIBRARY BUTTON ── */
 .btn-library {
-  position: fixed;
-  top: 20px;
-  right: 24px;
-  z-index: 50;
-  padding: 8px 18px;
-  background: #1e293b;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
+  padding: 6px 14px;
+  background: transparent;
+  color: #6272a4;
+  border: 1px solid #44475a;
+  border-radius: 8px;
   font-family: 'Nunito', sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 7px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  transition: background 0.12s;
+  gap: 6px;
+  transition: all 0.12s;
 }
-.btn-library:hover { background: #334155; }
-.btn-library svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.btn-library:hover { border-color: #6272a4; color: #f8f8f2; }
+.btn-library.open { border-color: #bd93f9; color: #bd93f9; }
+.btn-library svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 
 /* ── SAVE BUTTON ── */
 .btn-save {
@@ -615,130 +699,67 @@ body {
 }
 .btn-save:hover { background: #1a3325; border-color: #50fa7b; }
 
-/* ── DRAWER ── */
-.drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15,23,42,0.3);
-  backdrop-filter: blur(2px);
-  z-index: 200;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s;
-}
-.drawer-overlay.open { opacity: 1; pointer-events: all; }
-
-.drawer {
-  position: fixed;
-  top: 0; right: 0; bottom: 0;
-  width: 360px;
-  background: #fff;
-  box-shadow: -4px 0 24px rgba(0,0,0,0.12);
-  z-index: 201;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
-}
-.drawer-overlay.open .drawer { transform: translateX(0); }
-
-.drawer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid #f1f5f9;
-  flex-shrink: 0;
-}
-.drawer-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: #1e293b;
-}
-.drawer-close {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  border: 2px solid #e2e8f0;
-  background: #f8fafc;
-  color: #64748b;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.12s;
-}
-.drawer-close:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
-
-.drawer-list {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.drawer-empty {
-  text-align: center;
-  color: #cbd5e1;
-  font-size: 13px;
-  font-weight: 600;
-  margin-top: 60px;
-}
-
+/* ── SONG ITEMS ── */
 .song-item {
-  background: #f8fafc;
-  border: 2px solid #f1f5f9;
-  border-radius: 12px;
-  padding: 12px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 10px 10px 8px;
   cursor: pointer;
-  transition: border-color 0.12s, box-shadow 0.12s;
+  transition: background 0.1s, border-color 0.1s;
 }
-.song-item:hover { border-color: #bfdbfe; box-shadow: 0 2px 8px rgba(59,130,246,0.08); }
+.song-item:hover { background: #282a36; border-color: #44475a; }
+.song-item.active { background: #282a36; border-color: #6272a4; }
 
 .song-item-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 6px;
 }
 .song-item-name {
-  font-size: 14px;
-  font-weight: 800;
-  color: #1e293b;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8f8f2;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .song-item-date {
   font-size: 10px;
   font-weight: 600;
-  color: #94a3b8;
+  color: #44475a;
+  white-space: nowrap;
 }
 .song-item-delete {
-  width: 26px; height: 26px;
-  border-radius: 6px;
+  width: 22px; height: 22px;
+  border-radius: 5px;
   border: none;
   background: transparent;
-  color: #cbd5e1;
+  color: #44475a;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.12s;
   flex-shrink: 0;
 }
-.song-item-delete:hover { background: #fee2e2; color: #ef4444; }
+.song-item-delete:hover { color: #ff5555; }
 
 .song-item-notes {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 3px;
 }
 .song-note-pill {
-  padding: 2px 8px;
-  border-radius: 5px;
-  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
   font-weight: 700;
-  background: #e2e8f0;
-  color: #475569;
+  background: #383a4a;
+  color: #6272a4;
 }
-.song-note-pill.active { background: #3b82f6; color: #fff; }
+.song-note-pill.active { background: #001e36; color: #31a8ff; }
 
 /* ── SAVE MODAL ── */
 .save-overlay {
@@ -834,7 +855,7 @@ body {
 .save-actions-conflict { display: none; gap: 8px; justify-content: flex-end; }
 
 /* ── ACCIDENTAL TOGGLE ── */
-.acc-tog-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+
 .acc-tog { display: flex; background: #21222c; border-radius: 6px; padding: 2px; gap: 1px; }
 .acc-btn {
   padding: 3px 10px;
@@ -880,24 +901,20 @@ body {
 </style>
 </head>
 <body>
-<!-- Library toggle button -->
-<button class="btn-library" id="btn-library">
-  <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-  Library
-</button>
+<div class="app-layout">
 
-<!-- Library drawer -->
-<div class="drawer-overlay" id="drawer-overlay">
-  <div class="drawer">
-    <div class="drawer-header">
-      <span class="drawer-title">Song Library</span>
-      <button class="drawer-close" id="drawer-close">&#x2715;</button>
-    </div>
-    <div class="drawer-list" id="drawer-list">
-      <div class="drawer-empty">No saved songs yet</div>
-    </div>
+<!-- Left sidebar -->
+<div class="sidebar collapsed" id="sidebar">
+  <div class="sidebar-header">
+    <span class="sidebar-title">Library</span>
+  </div>
+  <div class="sidebar-list" id="drawer-list">
+    <div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>
   </div>
 </div>
+
+<!-- Main content -->
+<div class="main-content">
 
 <!-- Save modal -->
 <div class="save-overlay" id="save-overlay">
@@ -919,7 +936,14 @@ body {
 <div class="wrap">
 
   <div class="hdr">
-    <h1>Scale <span>Finder</span></h1>
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:4px;">
+      <button class="btn-library" id="btn-library">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        Library
+      </button>
+      <h1>Scale <span>Finder</span></h1>
+      <div style="width:80px"></div>
+    </div>
   </div>
 
   <!-- INPUT -->
@@ -1586,29 +1610,41 @@ async function saveSetting(key, value) {
 let drawerSongs = [];
 
 function openDrawer() {
-  document.getElementById('drawer-overlay').classList.add('open');
+  const sidebar = document.getElementById('sidebar');
+  const btn = document.getElementById('btn-library');
+  sidebar.classList.remove('collapsed');
+  btn.classList.add('open');
   loadDrawer();
 }
 
 function closeDrawer() {
-  document.getElementById('drawer-overlay').classList.remove('open');
+  /* no-op — sidebar stays open; call toggleDrawer to close */
+}
+
+function toggleDrawer() {
+  const sidebar = document.getElementById('sidebar');
+  const btn = document.getElementById('btn-library');
+  const isOpen = !sidebar.classList.contains('collapsed');
+  sidebar.classList.toggle('collapsed', isOpen);
+  btn.classList.toggle('open', !isOpen);
+  if (!isOpen) loadDrawer();
 }
 
 async function loadDrawer() {
   const list = document.getElementById('drawer-list');
-  list.innerHTML = '<div class="drawer-empty">Loading…</div>';
+  list.innerHTML = '<div class="sidebar-empty">Loading…</div>';
   drawerSongs = await fetchSongs();
   if (drawerSongs.length === 0) {
-    list.innerHTML = '<div class="drawer-empty">No saved songs yet</div>';
+    list.innerHTML = '<div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>';
     return;
   }
   list.innerHTML = drawerSongs.map((song, idx) => {
     const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
     const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
     const date   = new Date(song.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-    const pills  = NOTES.map((n, i) =>
-      `<span class="song-note-pill${notes.includes(i) ? ' active' : ''}">${n}</span>`
-    ).filter((_, i) => notes.includes(i)).join('');
+    const pills  = notes.map(i =>
+      `<span class="song-note-pill active">${noteName(i)}</span>`
+    ).join('');
     const scaleTag = scales.length
       ? `<span style="font-size:10px;font-weight:700;color:#22c55e;margin-left:4px;">${scales.length} scale${scales.length > 1 ? 's' : ''}</span>`
       : '';
@@ -1637,7 +1673,8 @@ function loadSong(idx) {
   scales.forEach(k => pickedScales.add(k));
   refreshButtons();
   analyze();
-  closeDrawer();
+  // highlight active song in sidebar
+  document.querySelectorAll('.song-item').forEach((el, i) => el.classList.toggle('active', i === idx));
 }
 
 async function removeSong(id) {
@@ -1645,11 +1682,7 @@ async function removeSong(id) {
   loadDrawer();
 }
 
-document.getElementById('btn-library').addEventListener('click', openDrawer);
-document.getElementById('drawer-close').addEventListener('click', closeDrawer);
-document.getElementById('drawer-overlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('drawer-overlay')) closeDrawer();
-});
+document.getElementById('btn-library').addEventListener('click', toggleDrawer);
 
 // ── SAVE MODAL ────────────────────────────────────────────────────────────────
 
@@ -1761,5 +1794,7 @@ fetchSettings().then(s => {
   }
 }).catch(() => {});
 </script>
+</div><!-- /main-content -->
+</div><!-- /app-layout -->
 </body>
 </html>
