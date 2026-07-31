@@ -195,12 +195,13 @@ body {
 }
 
 .scale-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .scale-card {
+  flex: 0 0 auto;
   background: #f8fafc;
   border: 2px solid #f1f5f9;
   border-radius: 12px;
@@ -1213,7 +1214,7 @@ function buildCard(m, input, idx) {
   }
 
   return `
-  <div class="scale-card${isPicked ? ' picked' : ''}" style="animation-delay:${idx * 0.025}s" onclick="openScaleModal(${m.root}, '${m.scale.name}')">
+  <div class="scale-card${isPicked ? ' picked' : ''}" style="width:${Math.max(220, m.scale.iv.length * 34 - 4 + 36)}px;animation-delay:${idx * 0.025}s" onclick="openScaleModal(${m.root}, '${m.scale.name}')">
     <div class="scale-card-hdr">
       <span class="scale-root">${rootName}</span>
       <span class="scale-name">${m.scale.name}${alias}</span>
