@@ -1187,10 +1187,11 @@ function setAccidental(flats) {
   saveSetting('useFlats', flats ? '1' : '0').catch(() => {});
   document.getElementById('acc-sharp').classList.toggle('on', !flats);
   document.getElementById('acc-flat').classList.toggle('on', flats);
-  document.querySelectorAll('.note-btn').forEach(b => {
+  document.querySelectorAll('#note-grid .note-btn').forEach(b => {
     const i = +b.dataset.i;
-    b.querySelector('.nn').textContent = noteName(i);
+    b.innerHTML = `<span class="nn">${noteName(i)}</span>`;
   });
+  refreshButtons();
   analyze();
   const overlay = document.getElementById('modal-overlay');
   if (overlay.classList.contains('open')) {
@@ -1901,8 +1902,8 @@ fetchSettings().then(s => {
     useFlats = true;
     document.getElementById('acc-sharp').classList.remove('on');
     document.getElementById('acc-flat').classList.add('on');
-    document.querySelectorAll('.note-btn').forEach(b => {
-      b.querySelector('.nn').textContent = noteName(+b.dataset.i);
+    document.querySelectorAll('#note-grid .note-btn').forEach(b => {
+      b.innerHTML = `<span class="nn">${noteName(+b.dataset.i)}</span>`;
     });
     analyze();
   } else {
