@@ -15,14 +15,36 @@ A music theory tool for guitarists and bassists. Pick notes, find matching scale
 - **Fretboard modal** — click any scale card to see it on a guitar or bass fretboard with triads color-coded (root/third/fifth)
 - **Fret highlighting** — click or drag across fret numbers to spotlight a position; click individual dots to dim notes you're not using
 - **File import** — drop in a PDF, text, or tab file and the notes auto-populate from chord names or tab notation
-- **Song library** — save and reload note sets by name, stored in MySQL; duplicate names prompt to overwrite or rename
+- **Song library** — save and reload note sets by name; duplicate names prompt to overwrite or rename
 
-## Requirements
+---
+
+## Just want to use it? (No setup required)
+
+You don't need to install anything. The app works by just opening a single file in your browser.
+
+**1. Download the project**
+
+Click the green **Code** button at the top of this page → **Download ZIP**, then unzip it somewhere on your computer.
+
+**2. Open the app**
+
+Open the unzipped folder and double-click **`index.html`**. That's it.
+
+Your saved songs and preferences are stored in your browser's local storage, so they stick around between sessions. No server, no database, no terminal.
+
+---
+
+## Server mode (for developers)
+
+Running the server gives you a proper MySQL-backed song library and settings that persist across browsers and devices.
+
+### Requirements
 
 - Node.js 18+
 - MySQL 8+
 
-## Install
+### Install
 
 ```bash
 git clone git@github.com:phatduckk/scale-finder.git
@@ -35,7 +57,7 @@ The installer will:
 2. Ask for your MySQL admin credentials (blank = tries root with no password)
 3. Create the `scales` database, `scales` DB user, and all tables — **never drops existing data**
 
-## Run
+### Run
 
 ```bash
 ./server.sh          # starts on port 3001 and opens your browser
@@ -44,16 +66,18 @@ The installer will:
 
 Or just `npm start` if you don't need the browser to auto-open.
 
-## Database
+### Database
 
 Two tables are created automatically:
 
 | Table | Purpose |
 |---|---|
 | `songs` | Saved note sets with name and timestamp |
-| `settings` | Persisted preferences (currently: guitar vs bass) |
+| `settings` | Persisted preferences (guitar/bass, sharp/flat) |
 
 Both use `utf8mb4` / `utf8mb4_unicode_ci` — case-insensitive, emoji-safe. Song names are unique at the DB level.
+
+---
 
 ## How scale matching works
 

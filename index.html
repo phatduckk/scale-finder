@@ -1420,16 +1420,34 @@ document.getElementById('file-import').addEventListener('change', async e => {
   applyImportedNotes(notes);
 });
 
-// ── API ───────────────────────────────────────────────────────────────────────
+// ── STORAGE ───────────────────────────────────────────────────────────────────
 
+const IS_SERVED = window.location.protocol !== 'file:';
 const API = 'http://localhost:3001/api';
 
+// localStorage helpers
+function lsGetSongs() {
+  return JSON.parse(localStorage.getItem('sf_songs') || '[]');
+}
+function lsGetSettings() {
+  return JSON.parse(localStorage.getItem('sf_settings') || '{}');
+}
+
 async function fetchSongs() {
+  if (!IS_SERVED) return lsGetSongs();
   const res = await fetch(`${API}/songs`);
   return res.json();
 }
 
 async function saveSong(name, notes) {
+  if (!IS_SERVED) {
+    const songs = lsGetSongs();
+    if (songs.some(s => s.name.toLowerCase() === name.toLowerCase()))
+      throw Object.assign(new Error('duplicate'), { code: 'duplicate' });
+    const song = { id: Date.now(), name, notes, created_at: new Date().toISOString() };
+    localStorage.setItem('sf_songs', JSON.stringify([song, ...songs]));
+    return song;
+  }
   const res = await fetch(`${API}/songs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -1441,15 +1459,26 @@ async function saveSong(name, notes) {
 }
 
 async function deleteSong(id) {
+  if (!IS_SERVED) {
+    localStorage.setItem('sf_songs', JSON.stringify(lsGetSongs().filter(s => s.id !== id)));
+    return;
+  }
   await fetch(`${API}/songs/${id}`, { method: 'DELETE' });
 }
 
 async function fetchSettings() {
+  if (!IS_SERVED) return lsGetSettings();
   const res = await fetch(`${API}/settings`);
   return res.json();
 }
 
 async function saveSetting(key, value) {
+  if (!IS_SERVED) {
+    const s = lsGetSettings();
+    s[key] = value;
+    localStorage.setItem('sf_settings', JSON.stringify(s));
+    return;
+  }
   await fetch(`${API}/settings/${encodeURIComponent(key)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
