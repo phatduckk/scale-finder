@@ -1360,7 +1360,8 @@ function buildMyScales(input = [], matches = []) {
       const scale = SCALES.find(s => s.name === scaleName);
       if (!scale) continue;
       const scaleSet = scale.iv.map(iv => (root + iv) % 12);
-      m = { root, scale, scaleSet, coverage: 1 };
+      const matched = input.filter(n => scaleSet.includes(n)).length;
+      m = { root, scale, scaleSet, coverage: matched / scale.iv.length, matched };
     }
     cards += buildCard(m, input, 0);
   }
@@ -1379,12 +1380,18 @@ function analyze() {
 
   const input = [...sel];
   const matches = [];
+  // Allow 1 chromatic miss when >7 notes are selected (e.g. borrowed chord in an import)
+  const allowedMiss = input.length > 7 ? 1 : 0;
 
   for (const scale of SCALES) {
     for (let root = 0; root < 12; root++) {
       const scaleSet = scale.iv.map(iv => (root + iv) % 12);
-      if (input.every(n => scaleSet.includes(n))) {
-        matches.push({ root, scale, scaleSet, coverage: input.length / scale.iv.length });
+      const matched = input.filter(n => scaleSet.includes(n)).length;
+      const missed  = input.length - matched;
+      if (missed <= allowedMiss) {
+        matches.push({ root, scale, scaleSet,
+          coverage: matched / scale.iv.length,
+          matched });
       }
     }
   }
@@ -1463,7 +1470,7 @@ function buildCard(m, input, idx) {
     <div class="scale-card-hdr">
       <span class="scale-root">${rootName}</span>
       <span class="scale-name">${m.scale.name}${alias}</span>
-      <span class="scale-count">${input.length}/${m.scale.iv.length}</span>
+      <span class="scale-count">${m.matched ?? input.length}/${m.scale.iv.length}</span>
       <button class="scale-pick-btn${isPicked ? ' on' : ''}" onclick="event.stopPropagation();togglePick(${m.root},'${m.scale.name}')">${isPicked ? '✓' : '+'}</button>
     </div>
     <div class="note-row">${pills}</div>
@@ -1692,11 +1699,12 @@ const CHORD_INTERVALS = {
 };
 
 function chordToNotes(token) {
-  const m = token.match(/^([A-G][#b]?)(m7b5|mM7|maj7|m7|dim7|dim|aug|sus2|sus4|madd9|add9|m9|m|5|7|9)?/i);
+  // Strict: uppercase root only, must consume full token (no trailing junk like "Chords")
+  const m = token.match(/^([A-G][#b]?)(m7b5|mM7|maj7|m7|dim7|dim|aug|sus2|sus4|madd9|add9|m9|m|5|7|9)?$/);
   if (!m) return [];
   const root = NOTE_TO_IDX[m[1]];
   if (root === undefined) return [];
-  const quality = m[2] ? m[2].replace(/^M/, 'maj') : 'maj';
+  const quality = m[2] || 'maj';
   const ivs = CHORD_INTERVALS[quality] || CHORD_INTERVALS['maj'];
   return ivs.map(iv => (root + iv) % 12);
 }
