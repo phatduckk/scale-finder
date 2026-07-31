@@ -47,8 +47,8 @@ body {
 }
 
 .sidebar-handle {
-  width: 16px;
-  background: #181c23;
+  width: 22px;
+  background: #2f3540;
   border-right: 1px solid #262b33;
   display: flex;
   align-items: center;
@@ -58,11 +58,12 @@ body {
   transition: background 0.12s;
   user-select: none;
 }
-.sidebar-handle:hover { background: #20242c; }
+.sidebar-handle:hover { background: #3a4050; }
 .sidebar-handle span {
-  font-size: 11px;
-  color: #8b93a1;
+  font-size: 22px;
+  color: #addbff;
   line-height: 1;
+  font-weight: 700;
 }
 
 .sidebar-header {
@@ -881,24 +882,12 @@ body {
 .acc-btn.on { background: #2d3d5c; color: #addbff; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
 /* ── MY SCALES ── */
-.my-scales-section { margin-bottom: 20px; }
-.picked-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.picked-chip {
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  background: #f0fdf4;
-  color: #16a34a;
-  border: 2px solid #86efac;
-  cursor: pointer;
-  transition: all 0.12s;
-}
-.picked-chip:hover { background: #dcfce7; border-color: #4ade80; }
+.my-scales-section { margin-bottom: 24px; }
 .picked-hint {
   font-size: 12px;
   font-weight: 600;
   color: #8b93a1;
+  padding: 4px 0;
 }
 
 /* ── ANIMATIONS ── */
@@ -1153,24 +1142,34 @@ document.getElementById('btn-clear').addEventListener('click', () => {
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
 
-function buildMyScales() {
+function buildMyScales(input = [], matches = []) {
   if (pickedScales.size === 0) {
     return `<div class="my-scales-section"><div class="picked-hint">Hit + on any scale card to pin your picks here</div></div>`;
   }
-  let chips = '';
+  let cards = '';
   for (const key of pickedScales) {
-    const i = key.indexOf(':');
-    const root = +key.slice(0, i);
-    const scaleName = key.slice(i + 1);
-    chips += `<div class="picked-chip" onclick="openScaleModal(${root},'${scaleName}')">${noteName(root)} ${scaleName}</div>`;
+    const sep = key.indexOf(':');
+    const root = +key.slice(0, sep);
+    const scaleName = key.slice(sep + 1);
+    let m = matches.find(x => x.root === root && x.scale.name === scaleName);
+    if (!m) {
+      const scale = SCALES.find(s => s.name === scaleName);
+      if (!scale) continue;
+      const scaleSet = scale.iv.map(iv => (root + iv) % 12);
+      m = { root, scale, scaleSet, coverage: 1 };
+    }
+    cards += buildCard(m, input, 0);
   }
-  return `<div class="my-scales-section"><div class="section-title" style="margin-bottom:10px">My Scales</div><div class="picked-chips">${chips}</div></div>`;
+  return `<div class="my-scales-section">
+    <div class="section-title" style="margin-bottom:10px">My Scales</div>
+    <div class="scale-cards">${cards}</div>
+  </div>`;
 }
 
 function analyze() {
   const content = document.getElementById('results-content');
   if (sel.size === 0) {
-    content.innerHTML = buildMyScales() + '<div class="empty-msg">Pick some notes above to get started</div>';
+    content.innerHTML = buildMyScales([]) + '<div class="empty-msg">Pick some notes above to get started</div>';
     return;
   }
 
@@ -1201,8 +1200,8 @@ function analyze() {
     if (topKeys.length >= 8) break;
   }
 
-  let html = buildMyScales();
-  html += `<div class="key-section"><div class="section-title" style="margin-bottom:10px">Suggested Keys</div><div class="chips">`;
+  // 1. Suggested Keys
+  let html = `<div class="key-section"><div class="section-title" style="margin-bottom:10px">Suggested Keys</div><div class="chips">`;
   topKeys.forEach((m, i) => {
     const cls = 'chip' + (i < 3 ? ' top' : '');
     const alias = m.scale.alias ? ` <span style="opacity:.55;font-weight:600;font-size:10px;">(${m.scale.alias})</span>` : '';
@@ -1210,6 +1209,10 @@ function analyze() {
   });
   html += '</div></div>';
 
+  // 2. My Scales (full cards)
+  html += buildMyScales(input, matches);
+
+  // 3. Scale groups by type
   const byType = {};
   for (const m of matches) {
     const t = m.scale.type;
