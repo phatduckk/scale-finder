@@ -88,7 +88,7 @@ body {
 .note-btn .na { font-size: 9px; color: #6272a4; margin-top: 2px; font-weight: 600; }
 .note-btn.sharp .nn { font-size: 13px; }
 .note-btn:hover { border-color: #6272a4; background: #44475a; color: #f8f8f2; }
-.note-btn.on { background: #3b82f6; border-color: #3b82f6; color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.4); }
+.note-btn.on { background: #001e36; border-color: #1a6aaa; color: #31a8ff; box-shadow: 0 2px 8px rgba(49,168,255,0.3); }
 .note-btn.on .na { color: rgba(255,255,255,0.7); }
 
 /* ── CONTROLS ── */
@@ -174,11 +174,11 @@ body {
   font-size: 12px;
   font-weight: 700;
   background: #383a4a;
-  color: #6272a4;
+  color: #b2b6c3;
   border: 2px solid #44475a;
 }
-.chip.top { background: #44475a; color: #bd93f9; border-color: #6272a4; }
-.chip.top:first-child { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.chip.top { background: #44475a; color: #cba6f7; border-color: #6272a4; }
+.chip.top:first-child { background: #001e36; color: #31a8ff; border-color: #1a6aaa; }
 
 /* ── SCALE GROUPS ── */
 .scale-group { margin-bottom: 24px; }
@@ -195,17 +195,16 @@ body {
 }
 
 .scale-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
 }
 
 .scale-card {
-  flex: 0 0 auto;
   background: #383a4a;
   border: 2px solid #44475a;
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 18px 20px;
   transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
   animation: fadeUp 0.18s ease both;
   cursor: pointer;
@@ -222,13 +221,13 @@ body {
 .scale-card.picked:hover { border-color: #22c55e; }
 
 .scale-pick-btn {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 6px;
   border: 2px solid #44475a;
   background: #44475a;
   color: #6272a4;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -241,17 +240,17 @@ body {
 .scale-pick-btn:hover { border-color: #86efac; color: #22c55e; background: #f0fdf4; }
 .scale-pick-btn.on { border-color: #22c55e; background: #22c55e; color: #fff; }
 
-.scale-card-hdr { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
-.scale-root { font-size: 20px; font-weight: 800; color: #f8f8f2; line-height: 1; }
-.scale-name { font-size: 12px; font-weight: 600; color: #6272a4; flex: 1; }
-.scale-count { font-size: 11px; font-weight: 700; color: #6272a4; }
+.scale-card-hdr { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+.scale-root { font-size: 26px; font-weight: 800; color: #f8f8f2; line-height: 1; }
+.scale-name { font-size: 14px; font-weight: 600; color: #b2b6c3; flex: 1; }
+.scale-count { font-size: 13px; font-weight: 700; color: #b2b6c3; }
 
 /* ── SCALE NOTE PILLS ── */
-.note-row { display: flex; flex-wrap: nowrap; gap: 4px; overflow: hidden; }
+.note-row { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .snote {
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
   padding: 0;
   border-radius: 6px;
@@ -259,17 +258,17 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 700;
 }
-.snote.scale        { background: #44475a; color: #6272a4; border-color: #44475a; }
-.snote.match        { background: #1a3a6b; color: #93c5fd; border-color: #3b82f6; }
-.snote.triad-root   { background: #3b82f6; color: #fff; border-color: #1d4ed8; }
-.snote.triad-third  { background: #f97316; color: #fff; border-color: #ea580c; }
-.snote.triad-fifth  { background: #8b5cf6; color: #fff; border-color: #7c3aed; }
-.snote.triad-root.match  { border-color: #1d4ed8; }
-.snote.triad-third.match { border-color: #ea580c; }
-.snote.triad-fifth.match { border-color: #7c3aed; }
+.snote.scale        { background: rgba(98,114,164,0.5); color: #b2b6c3; border-color: rgba(98,114,164,0.5); }
+.snote.match        { background: #001e36; color: #31a8ff; border-color: #0d4870; }
+.snote.triad-root   { background: #001e36; color: #31a8ff; border-color: #1a6aaa; }
+.snote.triad-third  { background: #2a1000; color: #ff9540; border-color: #703010; }
+.snote.triad-fifth  { background: #1a082c; color: #c470ff; border-color: #501890; }
+.snote.triad-root.match  { border-color: #1a6aaa; }
+.snote.triad-third.match { border-color: #703010; }
+.snote.triad-fifth.match { border-color: #501890; }
 
 /* ── MODAL OVERLAY ── */
 .modal-overlay {
@@ -382,9 +381,9 @@ body {
   background: #f1f5f9;
   color: #64748b;
 }
-.modal-note.is-root  { background: #3b82f6; color: #fff; }
-.modal-note.is-third { background: #f97316; color: #fff; }
-.modal-note.is-fifth { background: #8b5cf6; color: #fff; }
+.modal-note.is-root  { background: #001e36; color: #31a8ff; }
+.modal-note.is-third { background: #2a1000; color: #ff9540; }
+.modal-note.is-fifth { background: #1a082c; color: #c470ff; }
 
 /* Legend */
 .modal-legend {
@@ -406,9 +405,9 @@ body {
   height: 12px;
   border-radius: 50%;
 }
-.legend-dot.root  { background: #3b82f6; }
-.legend-dot.third { background: #f97316; }
-.legend-dot.fifth { background: #8b5cf6; }
+.legend-dot.root  { background: #31a8ff; }
+.legend-dot.third { background: #ff9540; }
+.legend-dot.fifth { background: #c470ff; }
 .legend-dot.other { background: #e2e8f0; border: 1.5px solid #cbd5e1; }
 
 /* Instrument tabs inside modal */
@@ -552,9 +551,9 @@ body {
   color: #475569;
   border: 2px solid #94a3b8;
 }
-.ndot.is-root  { background: #3b82f6; color: #fff; border-color: #1d4ed8; }
-.ndot.is-third { background: #f97316; color: #fff; border-color: #ea580c; }
-.ndot.is-fifth { background: #8b5cf6; color: #fff; border-color: #7c3aed; }
+.ndot.is-root  { background: #001e36; color: #31a8ff; border-color: #1a6aaa; }
+.ndot.is-third { background: #2a1000; color: #ff9540; border-color: #703010; }
+.ndot.is-fifth { background: #1a082c; color: #c470ff; border-color: #501890; }
 .ndot.user-dimmed { opacity: 0.15; cursor: pointer; }
 .ndot { cursor: pointer; }
 
@@ -1214,7 +1213,7 @@ function buildCard(m, input, idx) {
   }
 
   return `
-  <div class="scale-card${isPicked ? ' picked' : ''}" style="width:${Math.max(220, m.scale.iv.length * 34 - 4 + 36)}px;animation-delay:${idx * 0.025}s" onclick="openScaleModal(${m.root}, '${m.scale.name}')">
+  <div class="scale-card${isPicked ? ' picked' : ''}" style="animation-delay:${idx * 0.025}s" onclick="openScaleModal(${m.root}, '${m.scale.name}')">
     <div class="scale-card-hdr">
       <span class="scale-root">${rootName}</span>
       <span class="scale-name">${m.scale.name}${alias}</span>
