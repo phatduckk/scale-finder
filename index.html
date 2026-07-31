@@ -853,6 +853,27 @@ body {
 }
 .acc-btn.on { background: #fff; color: #1e293b; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
 
+/* ── MY SCALES ── */
+.my-scales-section { margin-bottom: 20px; }
+.picked-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.picked-chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 2px solid #86efac;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.picked-chip:hover { background: #dcfce7; border-color: #4ade80; }
+.picked-hint {
+  font-size: 12px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
 /* ── ANIMATIONS ── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
@@ -919,7 +940,6 @@ body {
 
   <!-- RESULTS -->
   <div class="card">
-    <div class="card-title">Analysis</div>
     <div id="results-content">
       <div class="empty-msg">Pick some notes above to get started</div>
     </div>
@@ -1094,10 +1114,24 @@ document.getElementById('btn-clear').addEventListener('click', () => {
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
 
+function buildMyScales() {
+  if (pickedScales.size === 0) {
+    return `<div class="my-scales-section"><div class="picked-hint">Hit + on any scale card to pin your picks here</div></div>`;
+  }
+  let chips = '';
+  for (const key of pickedScales) {
+    const i = key.indexOf(':');
+    const root = +key.slice(0, i);
+    const scaleName = key.slice(i + 1);
+    chips += `<div class="picked-chip" onclick="openScaleModal(${root},'${scaleName}')">${noteName(root)} ${scaleName}</div>`;
+  }
+  return `<div class="my-scales-section"><div class="section-title" style="margin-bottom:10px">My Scales</div><div class="picked-chips">${chips}</div></div>`;
+}
+
 function analyze() {
   const content = document.getElementById('results-content');
   if (sel.size === 0) {
-    content.innerHTML = '<div class="empty-msg">Pick some notes above to get started</div>';
+    content.innerHTML = buildMyScales() + '<div class="empty-msg">Pick some notes above to get started</div>';
     return;
   }
 
@@ -1128,7 +1162,8 @@ function analyze() {
     if (topKeys.length >= 8) break;
   }
 
-  let html = `<div class="key-section"><div class="acc-tog-row"><div class="section-title">Suggested Keys</div><div class="acc-tog"><button class="acc-btn${!useFlats?' on':''}" onclick="setAccidental(false)">#</button><button class="acc-btn${useFlats?' on':''}" onclick="setAccidental(true)">♭</button></div></div><div class="chips">`;
+  let html = buildMyScales();
+  html += `<div class="key-section"><div class="acc-tog-row"><div class="section-title">Suggested Keys</div><div class="acc-tog"><button class="acc-btn${!useFlats?' on':''}" onclick="setAccidental(false)">#</button><button class="acc-btn${useFlats?' on':''}" onclick="setAccidental(true)">♭</button></div></div><div class="chips">`;
   topKeys.forEach((m, i) => {
     const cls = 'chip' + (i < 3 ? ' top' : '');
     const alias = m.scale.alias ? ` <span style="opacity:.55;font-weight:600;font-size:10px;">(${m.scale.alias})</span>` : '';
