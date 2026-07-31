@@ -85,66 +85,61 @@ body {
   display: flex;
   flex-direction: row;
   flex-shrink: 0;
-  position: relative;
+}
+
+.sidebar-accent {
+  width: 3px;
+  background: var(--accent-green-text);
+  flex-shrink: 0;
 }
 
 .sidebar-panel {
-  width: 260px;
+  width: 240px;
   background: var(--bg-page);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transition: width 0.22s cubic-bezier(0.4,0,0.2,1);
 }
-.sidebar-panel.collapsed {
-  width: 0;
-}
-
-.sidebar-handle {
-  width: 22px;
-  background: var(--bg-input);
-  border-right: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background 0.12s;
-  user-select: none;
-}
-.sidebar-handle:hover { background: var(--bg-input-hover); }
-.sidebar-handle span {
-  font-size: 22px;
-  color: var(--accent-blue-text);
-  line-height: 1;
-  font-weight: 700;
-}
+.sidebar-panel.collapsed { width: 48px; }
 
 .sidebar-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 18px 16px 14px;
+  gap: 10px;
+  padding: 16px 14px 14px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
+  overflow: hidden;
   white-space: nowrap;
+}
+.sidebar-header-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-green-text);
 }
 .sidebar-title {
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  color: var(--accent-green-text);
   flex: 1;
   white-space: nowrap;
+  overflow: hidden;
 }
 .sidebar-new-btn {
-  width: 24px; height: 24px;
-  border-radius: 6px;
+  width: 22px; height: 22px;
+  border-radius: 5px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
@@ -156,23 +151,58 @@ body {
 .sidebar-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px;
+  overflow-x: hidden;
+  padding: 6px 6px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 .sidebar-list::-webkit-scrollbar { width: 4px; }
 .sidebar-list::-webkit-scrollbar-track { background: transparent; }
 .sidebar-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
 .sidebar-empty {
-  text-align: center;
   color: var(--text-excluded);
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 32px;
+  padding: 0 14px;
+  line-height: 1.6;
+  white-space: normal;
+}
+
+.sidebar-footer {
+  border-top: 1px solid var(--border);
+  padding: 6px;
+  flex-shrink: 0;
+}
+.sidebar-toggle-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: 'Nunito', sans-serif;
   font-size: 12px;
   font-weight: 600;
-  margin-top: 40px;
-  padding: 0 16px;
-  line-height: 1.6;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: background 0.12s, color 0.12s;
+  text-align: left;
+}
+.sidebar-toggle-btn:hover { background: var(--bg-card); color: var(--text-primary); }
+.sidebar-toggle-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── MAIN CONTENT ── */
@@ -773,65 +803,76 @@ body {
 
 /* ── SONG ITEMS ── */
 .song-item {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 10px 10px 8px;
-  cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
-}
-.song-item:hover { background: var(--bg-card); border-color: var(--border); }
-.song-item.active { background: var(--bg-card); border-color: var(--accent-blue-border); }
-
-.song-item-top {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.1s;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.song-item:hover { background: var(--bg-card); }
+.song-item.active { background: var(--bg-card); }
+.song-item.active .song-item-icon { color: var(--accent-blue-text); }
+
+.song-item-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: color 0.12s;
+}
+.song-item:hover .song-item-icon { color: var(--text-primary); }
+
+.song-item-body {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 0;
+  overflow: hidden;
 }
 .song-item-name {
   font-size: 13px;
   font-weight: 700;
   color: var(--text-primary);
-  flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: 1.2;
 }
-.song-item-date {
+.song-item.active .song-item-name { color: var(--accent-blue-text); }
+.song-item-meta {
   font-size: 10px;
   font-weight: 600;
   color: var(--text-excluded);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
 }
+
 .song-item-delete {
-  width: 22px; height: 22px;
+  width: 28px; height: 28px;
   border-radius: 5px;
   border: none;
   background: transparent;
-  color: #2a2c48;
+  color: var(--text-excluded);
   cursor: pointer;
   font-size: 13px;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.12s;
   flex-shrink: 0;
+  margin-right: 4px;
+  opacity: 0;
 }
+.song-item:hover .song-item-delete { opacity: 1; }
 .song-item-delete:hover { color: #ff5555; }
-
-.song-item-notes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-.song-note-pill {
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 700;
-  background: var(--bg-excluded);
-  color: var(--text-excluded);
-}
-.song-note-pill.active { background: var(--accent-blue-bg); color: var(--accent-blue-text); }
 
 /* ── SAVE MODAL ── */
 .save-overlay {
@@ -995,16 +1036,26 @@ body {
 
 <!-- Left sidebar -->
 <div class="sidebar" id="sidebar">
+  <div class="sidebar-accent"></div>
   <div class="sidebar-panel" id="sidebar-panel">
     <div class="sidebar-header">
+      <div class="sidebar-header-icon">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v8.5a2.5 2.5 0 1 1-2-2.449V5l6-2v7.5a2.5 2.5 0 1 1-2-2.449V3.333L9 3z"/></svg>
+      </div>
       <span class="sidebar-title">Library</span>
+      <button class="sidebar-new-btn" onclick="openSaveModal()" title="Save current">+</button>
     </div>
     <div class="sidebar-list" id="drawer-list">
       <div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>
     </div>
-  </div>
-  <div class="sidebar-handle" id="sidebar-handle" onclick="toggleDrawer()">
-    <span id="sidebar-arrow">‹</span>
+    <div class="sidebar-footer">
+      <button class="sidebar-toggle-btn" onclick="toggleDrawer()">
+        <div class="sidebar-toggle-icon">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><rect x="2" y="3" width="16" height="14" rx="2"/><path d="M7 3v14"/></svg>
+        </div>
+        <span>Toggle Library</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1732,7 +1783,6 @@ let drawerSongs = [];
 
 function openDrawer() {
   document.getElementById('sidebar-panel').classList.remove('collapsed');
-  document.getElementById('sidebar-arrow').textContent = '‹';
   loadDrawer();
 }
 
@@ -1740,10 +1790,8 @@ function closeDrawer() { /* no-op */ }
 
 function toggleDrawer() {
   const panel = document.getElementById('sidebar-panel');
-  const arrow = document.getElementById('sidebar-arrow');
   const isOpen = !panel.classList.contains('collapsed');
   panel.classList.toggle('collapsed', isOpen);
-  arrow.textContent = isOpen ? '›' : '‹';
   if (!isOpen) loadDrawer();
 }
 
@@ -1758,23 +1806,18 @@ async function loadDrawer() {
   list.innerHTML = drawerSongs.map((song, idx) => {
     const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
     const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
-    const date   = new Date(song.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-    const pills  = notes.map(i =>
-      `<span class="song-note-pill active">${noteName(i)}</span>`
-    ).join('');
-    const scaleTag = scales.length
-      ? `<span style="font-size:10px;font-weight:700;color:#5fd394;margin-left:4px;">${scales.length} scale${scales.length > 1 ? 's' : ''}</span>`
-      : '';
+    const date       = new Date(song.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const scaleLabel = scales.length ? ` · ${scales.length} scale${scales.length > 1 ? 's' : ''}` : '';
     return `
     <div class="song-item" onclick="loadSong(${idx})">
-      <div class="song-item-top">
-        <span class="song-item-name">${song.name}${scaleTag}</span>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span class="song-item-date">${date}</span>
-          <button class="song-item-delete" onclick="event.stopPropagation();removeSong(${song.id})" title="Delete">&#x2715;</button>
-        </div>
+      <div class="song-item-icon">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v8.5a2.5 2.5 0 1 1-2-2.449V5l6-2v7.5a2.5 2.5 0 1 1-2-2.449V3.333L9 3z"/></svg>
       </div>
-      <div class="song-item-notes">${pills}</div>
+      <div class="song-item-body">
+        <div class="song-item-name">${song.name}</div>
+        <div class="song-item-meta">${date}${scaleLabel}</div>
+      </div>
+      <button class="song-item-delete" onclick="event.stopPropagation();removeSong(${song.id})" title="Delete">&#x2715;</button>
     </div>`;
   }).join('');
 }
