@@ -1528,15 +1528,19 @@ function analyze() {
 
   const input = [...sel];
   const matches = [];
-  // Allow 1 chromatic miss when >7 notes are selected (e.g. borrowed chord in an import)
-  const allowedMiss = input.length > 7 ? 1 : 0;
+  const largeInput = input.length > 7;
 
   for (const scale of SCALES) {
     for (let root = 0; root < 12; root++) {
       const scaleSet = scale.iv.map(iv => (root + iv) % 12);
       const matched = input.filter(n => scaleSet.includes(n)).length;
-      const missed  = input.length - matched;
-      if (missed <= allowedMiss) {
+      // Small input: check my notes ⊆ scale (0 misses allowed)
+      // Large input (chord expansion): check scale ⊆ my notes, allow 1 miss
+      // so borrowed chords that bloat the note set don't kill matches
+      const missed = largeInput
+        ? scaleSet.length - matched   // scale ⊆ input, allow 1 borrowed chord
+        : input.length - matched;     // input ⊆ scale, strict
+      if (missed <= (largeInput ? 1 : 0)) {
         matches.push({ root, scale, scaleSet,
           coverage: matched / scale.iv.length,
           matched });
@@ -1893,6 +1897,12 @@ function parseChords(text) {
       if (q !== 'maj' && count > bestCount) { bestQ = q; bestCount = count; }
     }
     if (bestQ) rootQuality.set(root, bestQ);
+  }
+  // Explicit key signature wins over first-chord heuristic
+  const keyMatch = text.match(/\bkey[:\s]+([A-G][#b]?)\s*(minor|major|min|maj)?\b/i);
+  if (keyMatch) {
+    const keyRoot = NOTE_TO_IDX[keyMatch[1]];
+    if (keyRoot !== undefined) firstRoot = keyRoot;
   }
   return { notes: found, rootFreq, firstRoot, rootQuality };
 }
