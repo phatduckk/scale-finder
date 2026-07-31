@@ -553,6 +553,281 @@ body {
   background: #e2e8f0;
 }
 
+/* ── LIBRARY BUTTON ── */
+.btn-library {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  z-index: 50;
+  padding: 8px 18px;
+  background: #1e293b;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: background 0.12s;
+}
+.btn-library:hover { background: #334155; }
+.btn-library svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+/* ── SAVE BUTTON ── */
+.btn-save {
+  padding: 7px 18px;
+  border: 2px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #16a34a;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s;
+}
+.btn-save:hover { background: #dcfce7; border-color: #86efac; }
+
+/* ── DRAWER ── */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.3);
+  backdrop-filter: blur(2px);
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.drawer-overlay.open { opacity: 1; pointer-events: all; }
+
+.drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 360px;
+  background: #fff;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+.drawer-overlay.open .drawer { transform: translateX(0); }
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-shrink: 0;
+}
+.drawer-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #1e293b;
+}
+.drawer-close {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+}
+.drawer-close:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
+
+.drawer-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.drawer-empty {
+  text-align: center;
+  color: #cbd5e1;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 60px;
+}
+
+.song-item {
+  background: #f8fafc;
+  border: 2px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.song-item:hover { border-color: #bfdbfe; box-shadow: 0 2px 8px rgba(59,130,246,0.08); }
+
+.song-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.song-item-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e293b;
+}
+.song-item-date {
+  font-size: 10px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+.song-item-delete {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.12s;
+  flex-shrink: 0;
+}
+.song-item-delete:hover { background: #fee2e2; color: #ef4444; }
+
+.song-item-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.song-note-pill {
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #475569;
+}
+.song-note-pill.active { background: #3b82f6; color: #fff; }
+
+/* ── SAVE MODAL ── */
+.save-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.4);
+  backdrop-filter: blur(4px);
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.save-overlay.open { opacity: 1; pointer-events: all; }
+
+.save-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  width: 360px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+  transform: scale(0.97);
+  transition: transform 0.15s;
+}
+.save-overlay.open .save-box { transform: scale(1); }
+.save-box h3 { font-size: 18px; font-weight: 800; margin-bottom: 16px; color: #1e293b; }
+.save-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  outline: none;
+  transition: border-color 0.12s;
+  margin-bottom: 16px;
+}
+.save-input:focus { border-color: #93c5fd; }
+.save-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.save-cancel {
+  padding: 8px 18px;
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s;
+}
+.save-confirm {
+  padding: 8px 18px;
+  border: 2px solid #3b82f6;
+  background: #3b82f6;
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s;
+}
+.save-confirm:hover { background: #2563eb; border-color: #2563eb; }
+.save-warn {
+  display: none;
+  background: #fff7ed;
+  border: 2px solid #fed7aa;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c2410c;
+  margin-bottom: 12px;
+}
+.save-overwrite {
+  padding: 8px 18px;
+  border: 2px solid #ef4444;
+  background: #ef4444;
+  color: #fff;
+  font-family: 'Nunito', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s;
+}
+.save-overwrite:hover { background: #dc2626; border-color: #dc2626; }
+.save-actions-conflict { display: none; gap: 8px; justify-content: flex-end; }
+
+/* ── ACCIDENTAL TOGGLE ── */
+.acc-tog-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.acc-tog { display: flex; background: #f1f5f9; border-radius: 6px; padding: 2px; gap: 1px; }
+.acc-btn {
+  padding: 3px 10px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.12s;
+  line-height: 1.4;
+}
+.acc-btn.on { background: #fff; color: #1e293b; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
 /* ── ANIMATIONS ── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
@@ -561,6 +836,42 @@ body {
 </style>
 </head>
 <body>
+<!-- Library toggle button -->
+<button class="btn-library" id="btn-library">
+  <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+  Library
+</button>
+
+<!-- Library drawer -->
+<div class="drawer-overlay" id="drawer-overlay">
+  <div class="drawer">
+    <div class="drawer-header">
+      <span class="drawer-title">Song Library</span>
+      <button class="drawer-close" id="drawer-close">&#x2715;</button>
+    </div>
+    <div class="drawer-list" id="drawer-list">
+      <div class="drawer-empty">No saved songs yet</div>
+    </div>
+  </div>
+</div>
+
+<!-- Save modal -->
+<div class="save-overlay" id="save-overlay">
+  <div class="save-box">
+    <h3>Save Song</h3>
+    <input class="save-input" id="save-input" type="text" placeholder="Song name…" maxlength="80">
+    <div class="save-warn" id="save-warn"></div>
+    <div class="save-actions" id="save-actions-normal">
+      <button class="save-cancel" id="save-cancel">Cancel</button>
+      <button class="save-confirm" id="save-confirm">Save</button>
+    </div>
+    <div class="save-actions save-actions-conflict" id="save-actions-conflict">
+      <button class="save-cancel" id="save-rename">Change Name</button>
+      <button class="save-overwrite" id="save-overwrite">Overwrite</button>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
 
   <div class="hdr">
@@ -573,6 +884,7 @@ body {
     <div class="note-grid" id="note-grid"></div>
     <div class="ctrl-row">
       <div style="display:flex;gap:8px;margin-left:auto;">
+        <button class="btn-save" id="btn-save">Save</button>
         <label class="btn-import" for="file-import">Import file</label>
         <button class="btn-clear" id="btn-clear">Clear</button>
         <input type="file" id="file-import" accept=".pdf,.txt,.tab,.pro,.chord" style="display:none">
@@ -682,6 +994,37 @@ let instrument = 'guitar';
 let modalInstrument = 'guitar';
 let modalRoot = 0;
 let modalScaleName = '';
+let useFlats = false;
+
+function noteName(idx) {
+  const n = NOTES[idx];
+  return useFlats && ALT[n] ? ALT[n] : n;
+}
+
+function setAccidental(flats) {
+  useFlats = flats;
+  analyze();
+  const overlay = document.getElementById('modal-overlay');
+  if (overlay.classList.contains('open')) {
+    const scale = SCALES.find(s => s.name === modalScaleName);
+    if (!scale) return;
+    document.getElementById('modal-root').textContent = noteName(modalRoot);
+    const scaleNotes = scale.iv.map(iv => (modalRoot + iv) % 12);
+    let notePills = '';
+    for (let offset = 0; offset < 12; offset++) {
+      const ni = (modalRoot + offset) % 12;
+      if (scaleNotes.includes(ni)) {
+        const role = noteRole(ni, modalRoot, scale);
+        notePills += `<span class="modal-note is-${role}">${noteName(ni)}</span>`;
+      }
+    }
+    document.getElementById('modal-notes-row').innerHTML = notePills;
+    const savedLit = new Set(litFrets);
+    renderFretboard(modalRoot, scale);
+    litFrets = savedLit;
+    applyFretHighlight();
+  }
+}
 
 // ── NOTE GRID ─────────────────────────────────────────────────────────────────
 
@@ -750,11 +1093,11 @@ function analyze() {
     if (topKeys.length >= 8) break;
   }
 
-  let html = '<div class="key-section"><div class="section-title">Suggested Keys</div><div class="chips">';
+  let html = `<div class="key-section"><div class="acc-tog-row"><div class="section-title">Suggested Keys</div><div class="acc-tog"><button class="acc-btn${!useFlats?' on':''}" onclick="setAccidental(false)">#</button><button class="acc-btn${useFlats?' on':''}" onclick="setAccidental(true)">♭</button></div></div><div class="chips">`;
   topKeys.forEach((m, i) => {
     const cls = 'chip' + (i < 3 ? ' top' : '');
     const alias = m.scale.alias ? ` <span style="opacity:.55;font-weight:600;font-size:10px;">(${m.scale.alias})</span>` : '';
-    html += `<div class="${cls}" onclick="openScaleModal(${m.root},'${m.scale.name}')" style="cursor:pointer">${NOTES[m.root]} ${m.scale.name}${alias}</div>`;
+    html += `<div class="${cls}" onclick="openScaleModal(${m.root},'${m.scale.name}')" style="cursor:pointer">${noteName(m.root)} ${m.scale.name}${alias}</div>`;
   });
   html += '</div></div>';
 
@@ -778,7 +1121,7 @@ function analyze() {
 }
 
 function buildCard(m, input, idx) {
-  const rootName = NOTES[m.root];
+  const rootName = noteName(m.root);
   const alias = m.scale.alias ? ` / ${m.scale.alias}` : '';
 
   const orderedNotes = [];
@@ -794,7 +1137,7 @@ function buildCard(m, input, idx) {
     let cls = 'snote';
     if (role !== 'scale') cls += ` triad-${role}${isInput ? ' match' : ''}`;
     else                  cls += isInput ? ' match' : ' scale';
-    pills += `<div class="${cls}">${NOTES[ni]}</div>`;
+    pills += `<div class="${cls}">${noteName(ni)}</div>`;
   }
 
   return `
@@ -833,7 +1176,7 @@ function openScaleModal(root, scaleName) {
   modalRoot = root;
   modalScaleName = scaleName;
 
-  document.getElementById('modal-root').textContent = NOTES[root];
+  document.getElementById('modal-root').textContent = noteName(root);
   document.getElementById('modal-scale-name').textContent = scaleName;
   document.getElementById('modal-alias').textContent = scale.alias ? `/ ${scale.alias}` : '';
 
@@ -844,7 +1187,7 @@ function openScaleModal(root, scaleName) {
     const ni = (root + offset) % 12;
     if (scaleNotes.includes(ni)) {
       const role = noteRole(ni, root, scale);
-      notePills += `<span class="modal-note is-${role}">${NOTES[ni]}</span>`;
+      notePills += `<span class="modal-note is-${role}">${noteName(ni)}</span>`;
     }
   }
   document.getElementById('modal-notes-row').innerHTML = notePills;
@@ -884,7 +1227,7 @@ function renderFretboard(root, scale) {
 
       const role = inScale ? noteRole(noteIdx, root, scale) : null;
       const dot = inScale
-        ? `<div class="ndot is-${role}">${NOTES[noteIdx]}</div>`
+        ? `<div class="ndot is-${role}">${noteName(noteIdx)}</div>`
         : '';
 
       html += `<div class="${cellCls}" data-fret="${f}" style="--sw:${str.sw}px">${dot}</div>`;
@@ -991,6 +1334,7 @@ document.querySelectorAll('.modal-inst-btn').forEach(b => {
   b.addEventListener('click', () => {
     modalInstrument = b.dataset.minst;
     document.querySelectorAll('.modal-inst-btn').forEach(x => x.classList.toggle('on', x === b));
+    saveSetting('instrument', modalInstrument).catch(() => {});
     const scale = SCALES.find(s => s.name === modalScaleName);
     if (scale) renderFretboard(modalRoot, scale);
   });
@@ -1075,9 +1419,199 @@ document.getElementById('file-import').addEventListener('change', async e => {
   applyImportedNotes(notes);
 });
 
+// ── API ───────────────────────────────────────────────────────────────────────
+
+const API = 'http://localhost:3001/api';
+
+async function fetchSongs() {
+  const res = await fetch(`${API}/songs`);
+  return res.json();
+}
+
+async function saveSong(name, notes) {
+  const res = await fetch(`${API}/songs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, notes }),
+  });
+  if (res.status === 409) throw Object.assign(new Error('duplicate'), { code: 'duplicate' });
+  if (!res.ok) throw new Error('save failed');
+  return res.json();
+}
+
+async function deleteSong(id) {
+  await fetch(`${API}/songs/${id}`, { method: 'DELETE' });
+}
+
+async function fetchSettings() {
+  const res = await fetch(`${API}/settings`);
+  return res.json();
+}
+
+async function saveSetting(key, value) {
+  await fetch(`${API}/settings/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value }),
+  });
+}
+
+// ── DRAWER ────────────────────────────────────────────────────────────────────
+
+function openDrawer() {
+  document.getElementById('drawer-overlay').classList.add('open');
+  loadDrawer();
+}
+
+function closeDrawer() {
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+async function loadDrawer() {
+  const list = document.getElementById('drawer-list');
+  list.innerHTML = '<div class="drawer-empty">Loading…</div>';
+  const songs = await fetchSongs();
+  if (songs.length === 0) {
+    list.innerHTML = '<div class="drawer-empty">No saved songs yet</div>';
+    return;
+  }
+  list.innerHTML = songs.map(song => {
+    const notes = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
+    const date  = new Date(song.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const pills = NOTES.map((n, i) =>
+      `<span class="song-note-pill${notes.includes(i) ? ' active' : ''}">${n}</span>`
+    ).filter((_, i) => notes.includes(i)).join('');
+    return `
+    <div class="song-item" onclick="loadSong(${JSON.stringify(notes).replace(/"/g,"'")})">
+      <div class="song-item-top">
+        <span class="song-item-name">${song.name}</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="song-item-date">${date}</span>
+          <button class="song-item-delete" onclick="event.stopPropagation();removeSong(${song.id})" title="Delete">&#x2715;</button>
+        </div>
+      </div>
+      <div class="song-item-notes">${pills}</div>
+    </div>`;
+  }).join('');
+}
+
+function loadSong(notes) {
+  sel.clear();
+  notes.forEach(n => sel.add(n));
+  refreshButtons();
+  analyze();
+  closeDrawer();
+}
+
+async function removeSong(id) {
+  await deleteSong(id);
+  loadDrawer();
+}
+
+document.getElementById('btn-library').addEventListener('click', openDrawer);
+document.getElementById('drawer-close').addEventListener('click', closeDrawer);
+document.getElementById('drawer-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('drawer-overlay')) closeDrawer();
+});
+
+// ── SAVE MODAL ────────────────────────────────────────────────────────────────
+
+let conflictId = null;
+
+function resetSaveModal() {
+  conflictId = null;
+  document.getElementById('save-warn').style.display = 'none';
+  document.getElementById('save-actions-normal').style.display = 'flex';
+  document.getElementById('save-actions-conflict').style.display = 'none';
+  document.getElementById('save-input').value = '';
+}
+
+function openSaveModal() {
+  if (sel.size === 0) { alert('Select some notes first!'); return; }
+  resetSaveModal();
+  document.getElementById('save-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('save-input').focus(), 150);
+}
+
+function closeSaveModal() {
+  document.getElementById('save-overlay').classList.remove('open');
+}
+
+async function confirmSave() {
+  const name = document.getElementById('save-input').value.trim();
+  if (!name) { document.getElementById('save-input').focus(); return; }
+
+  const songs = await fetchSongs();
+  const existing = songs.find(s => s.name.toLowerCase() === name.toLowerCase());
+  if (existing) {
+    conflictId = existing.id;
+    const warn = document.getElementById('save-warn');
+    warn.textContent = `"${name}" already exists. Overwrite it or choose a different name.`;
+    warn.style.display = 'block';
+    document.getElementById('save-actions-normal').style.display = 'none';
+    document.getElementById('save-actions-conflict').style.display = 'flex';
+    return;
+  }
+
+  try {
+    await saveSong(name, [...sel]);
+    closeSaveModal();
+  } catch (err) {
+    if (err.code === 'duplicate') {
+      // DB caught it (race condition) — surface the conflict UI
+      const songs = await fetchSongs();
+      const existing = songs.find(s => s.name.toLowerCase() === name.toLowerCase());
+      if (existing) conflictId = existing.id;
+      const warn = document.getElementById('save-warn');
+      warn.textContent = `"${name}" already exists. Overwrite it or choose a different name.`;
+      warn.style.display = 'block';
+      document.getElementById('save-actions-normal').style.display = 'none';
+      document.getElementById('save-actions-conflict').style.display = 'flex';
+    }
+  }
+}
+
+async function overwriteSave() {
+  const name = document.getElementById('save-input').value.trim();
+  if (conflictId) await deleteSong(conflictId);
+  conflictId = null;
+  try {
+    await saveSong(name, [...sel]);
+    closeSaveModal();
+  } catch (err) {
+    if (err.code === 'duplicate') renameSave();
+  }
+}
+
+function renameSave() {
+  conflictId = null;
+  document.getElementById('save-warn').style.display = 'none';
+  document.getElementById('save-actions-normal').style.display = 'flex';
+  document.getElementById('save-actions-conflict').style.display = 'none';
+  const input = document.getElementById('save-input');
+  input.select();
+  input.focus();
+}
+
+document.getElementById('btn-save').addEventListener('click', openSaveModal);
+document.getElementById('save-cancel').addEventListener('click', closeSaveModal);
+document.getElementById('save-confirm').addEventListener('click', confirmSave);
+document.getElementById('save-overwrite').addEventListener('click', overwriteSave);
+document.getElementById('save-rename').addEventListener('click', renameSave);
+document.getElementById('save-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmSave();
+  if (e.key === 'Escape') closeSaveModal();
+});
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 buildNoteGrid();
+
+fetchSettings().then(s => {
+  if (s.instrument === 'guitar' || s.instrument === 'bass') {
+    modalInstrument = s.instrument;
+  }
+}).catch(() => {});
 </script>
 </body>
 </html>
