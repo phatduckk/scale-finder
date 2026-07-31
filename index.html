@@ -300,7 +300,7 @@ body {
 
 .btn-import {
   padding: 10px 20px;
-  border: 1px solid var(--accent-purple-bg);
+  border: 1px solid var(--accent-purple-border);
   background: var(--accent-purple-bg);
   color: var(--accent-purple-text);
   font-family: 'Nunito', sans-serif;
@@ -426,7 +426,7 @@ body {
 }
 
 .snote {
-  padding: 12px 0;
+  aspect-ratio: 1;
   border-radius: 8px;
   border: 1px solid transparent;
   display: flex;
@@ -436,6 +436,7 @@ body {
   font-size: 14px;
   font-weight: 700;
   min-width: 0;
+  width: 100%;
 }
 .snote.scale        { background: var(--bg-excluded); color: var(--text-excluded); border-color: transparent; }
 .snote.match        { background: var(--accent-blue-bg); color: var(--accent-blue-text); border-color: var(--accent-blue-border); }
@@ -927,7 +928,7 @@ body {
 
 /* ── ACCIDENTAL TOGGLE ── */
 
-.acc-tog { display: flex; background: #21222c; border-radius: 6px; padding: 2px; gap: 1px; }
+.acc-tog { display: flex; background: var(--bg-input); border: 1px solid var(--border); border-radius: 6px; padding: 2px; gap: 1px; }
 .acc-btn {
   padding: 3px 10px;
   border: none;
