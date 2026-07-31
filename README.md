@@ -1,6 +1,10 @@
 # Scale Finder
 
-A music theory tool for guitarists and bassists. Pick notes, find matching scales, explore fretboard diagrams.
+A music theory tool for guitarists and bassists built to help write basslines, solos, and parts for **[Victim Nation](https://open.spotify.com/artist/2hYrKchqLIWrBZywielVhN?si=nJb3grsaTrG67GajT2BeTw)** songs.
+
+Pick notes, find matching scales, explore fretboard diagrams.
+
+> 🎧 Check out Victim Nation on [Spotify](https://open.spotify.com/artist/2hYrKchqLIWrBZywielVhN?si=nJb3grsaTrG67GajT2BeTw) and [Apple Music](https://music.apple.com/us/album/too-late-for-that/6790938469)
 
 ![Scale Finder](https://raw.githubusercontent.com/phatduckk/scale-finder/main/screenshot.png)
 
