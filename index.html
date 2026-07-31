@@ -475,6 +475,20 @@ body {
   background: #94a3b8;
 }
 
+/* Fret highlight band */
+.fcell.fret-lit { background: rgba(59,130,246,0.07); }
+.fcell.fret-dim .ndot { opacity: 0.18; }
+
+/* Fret number — interactive */
+.fret-num {
+  cursor: col-resize;
+  border-radius: 4px;
+  padding: 2px 0;
+  transition: background 0.1s, color 0.1s;
+  user-select: none;
+}
+.fret-num.fret-lit { background: #eff6ff; color: #2563eb; border-radius: 4px; }
+
 /* Note dot */
 .ndot {
   width: 42px;
@@ -487,13 +501,15 @@ body {
   font-weight: 800;
   position: relative;
   z-index: 2;
-  background: #f1f5f9;
-  color: #94a3b8;
-  border: 2px solid #e2e8f0;
+  background: #e2e8f0;
+  color: #475569;
+  border: 2px solid #94a3b8;
 }
 .ndot.is-root  { background: #3b82f6; color: #fff; border-color: #1d4ed8; }
 .ndot.is-third { background: #f97316; color: #fff; border-color: #ea580c; }
 .ndot.is-fifth { background: #8b5cf6; color: #fff; border-color: #7c3aed; }
+.ndot.user-dimmed { opacity: 0.15; cursor: pointer; }
+.ndot { cursor: pointer; }
 
 /* Position markers row below fretboard */
 .fret-dots-row {
@@ -826,6 +842,7 @@ function openScaleModal(root, scaleName) {
     b.classList.toggle('on', b.dataset.minst === modalInstrument);
   });
 
+  litFrets = new Set();
   renderFretboard(root, scale);
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -838,7 +855,7 @@ function renderFretboard(root, scale) {
   // Fret number row
   let html = '<div class="fret-num-row">';
   for (let f = 0; f <= NUM_FRETS; f++) {
-    html += `<div class="fret-num">${f === 0 ? '' : f}</div>`;
+    html += `<div class="fret-num" data-fret="${f}">${f === 0 ? '' : f}</div>`;
   }
   html += '</div>';
 
@@ -859,7 +876,7 @@ function renderFretboard(root, scale) {
         ? `<div class="ndot is-${role}">${NOTES[noteIdx]}</div>`
         : '';
 
-      html += `<div class="${cellCls}" style="--sw:${str.sw}px">${dot}</div>`;
+      html += `<div class="${cellCls}" data-fret="${f}" style="--sw:${str.sw}px">${dot}</div>`;
     }
     html += '</div>';
   }
@@ -878,6 +895,69 @@ function renderFretboard(root, scale) {
   html += '</div>';
 
   document.getElementById('fboard').innerHTML = html;
+  initFretDrag();
+}
+
+// ── FRET HIGHLIGHT ────────────────────────────────────────────────────────────
+
+let litFrets = new Set();
+let dragInfo  = null; // { anchor, moved }
+
+function applyFretHighlight() {
+  const fboard = document.getElementById('fboard');
+  const hasFilter = litFrets.size > 0;
+  fboard.querySelectorAll('[data-fret]').forEach(el => {
+    const f   = +el.dataset.fret;
+    const lit = litFrets.has(f);
+    if (el.classList.contains('fret-num')) {
+      el.classList.toggle('fret-lit', lit);
+    } else {
+      el.classList.toggle('fret-lit', lit);
+      el.classList.toggle('fret-dim', hasFilter && !lit);
+    }
+  });
+}
+
+function initFretDrag() {
+  const fboard = document.getElementById('fboard');
+
+  fboard.addEventListener('mousedown', e => {
+    const numEl = e.target.closest('.fret-num[data-fret]');
+    if (!numEl) return;
+    e.preventDefault();
+    dragInfo = { anchor: +numEl.dataset.fret, moved: false };
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragInfo) return;
+    const numEl = e.target.closest?.('.fret-num[data-fret]');
+    if (!numEl) return;
+    const f = +numEl.dataset.fret;
+    if (f === dragInfo.anchor && !dragInfo.moved) return;
+    dragInfo.moved = true;
+    const lo = Math.min(dragInfo.anchor, f);
+    const hi = Math.max(dragInfo.anchor, f);
+    litFrets = new Set(Array.from({ length: hi - lo + 1 }, (_, i) => lo + i));
+    applyFretHighlight();
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragInfo) return;
+    if (!dragInfo.moved) {
+      // plain click — toggle this fret
+      const f = dragInfo.anchor;
+      litFrets.has(f) ? litFrets.delete(f) : litFrets.add(f);
+      applyFretHighlight();
+    }
+    dragInfo = null;
+  });
+
+  // Click a note dot to dim/un-dim it
+  fboard.addEventListener('click', e => {
+    const dot = e.target.closest('.ndot');
+    if (!dot) return;
+    dot.classList.toggle('user-dimmed');
+  });
 }
 
 function closeModal() {
