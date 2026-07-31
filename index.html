@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scale Finder — Guitar & Bass</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Nunito', system-ui, sans-serif;
+  background: #f0f4f8;
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 40px 20px 80px;
+}
+
+/* ── HEADER ── */
+.hdr { text-align: center; margin-bottom: 32px; }
+
+.hdr h1 {
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.5px;
+}
+.hdr h1 span { color: #3b82f6; }
+
+.hdr-sub {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* ── CARD ── */
+.card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 18px;
+}
+
+/* ── NOTE BUTTONS ── */
+.note-grid {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.note-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  transition: all 0.12s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.note-btn .nn { font-size: 16px; line-height: 1; }
+.note-btn .na { font-size: 9px; color: #94a3b8; margin-top: 2px; font-weight: 600; }
+.note-btn.sharp .nn { font-size: 13px; }
+.note-btn:hover { border-color: #93c5fd; background: #eff6ff; color: #2563eb; }
+.note-btn.on { background: #3b82f6; border-color: #3b82f6; color: #fff; box-shadow: 0 2px 8px rgba(59,130,246,0.4); }
+.note-btn.on .na { color: rgba(255,255,255,0.7); }
+
+/* ── CONTROLS ── */
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.inst-tog { display: flex; background: #f1f5f9; border-radius: 8px; padding: 3px; gap: 2px; }
+
+.inst-btn {
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.12s;
+}
+.inst-btn.on { background: #fff; color: #1e293b; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+.btn-clear {
+  padding: 7px 18px;
+  border: 2px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s;
+}
+.btn-clear:hover { border-color: #fca5a5; color: #ef4444; background: #fff5f5; }
+
+/* ── EMPTY STATE ── */
+.empty-msg {
+  text-align: center;
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 32px 0;
+}
+
+/* ── KEY CHIPS ── */
+.key-section { margin-bottom: 24px; }
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.chip {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 2px solid #e2e8f0;
+}
+.chip.top { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.chip.top:first-child { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+/* ── SCALE GROUPS ── */
+.scale-group { margin-bottom: 24px; }
+
+.group-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 10px;
+}
+
+.scale-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
+}
+
+.scale-card {
+  background: #f8fafc;
+  border: 2px solid #f1f5f9;
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.12s, box-shadow 0.12s, transform 0.12s;
+  animation: fadeUp 0.18s ease both;
+  cursor: pointer;
+}
+.scale-card:hover {
+  border-color: #bfdbfe;
+  box-shadow: 0 4px 12px rgba(59,130,246,0.1);
+  transform: translateY(-1px);
+}
+
+.scale-card-hdr { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
+.scale-root { font-size: 20px; font-weight: 800; color: #1e293b; line-height: 1; }
+.scale-name { font-size: 12px; font-weight: 600; color: #64748b; flex: 1; }
+.scale-count { font-size: 11px; font-weight: 700; color: #cbd5e1; }
+
+/* ── SCALE NOTE PILLS ── */
+.note-row { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.snote {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.snote.scale  { background: #f1f5f9; color: #94a3b8; }
+.snote.match  { background: #dbeafe; color: #2563eb; }
+.snote.root   { background: #e2e8f0; color: #334155; outline: 2px solid #94a3b8; outline-offset: -2px; }
+.snote.root.match { background: #3b82f6; color: #fff; outline: 2px solid #1d4ed8; outline-offset: -2px; }
+
+/* ── MODAL OVERLAY ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.18);
+  width: 100%;
+  max-width: 1100px;
+  max-height: 92vh;
+  overflow-y: auto;
+  transform: translateY(12px) scale(0.98);
+  transition: transform 0.18s ease;
+}
+.modal-overlay.open .modal {
+  transform: translateY(0) scale(1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 0;
+  gap: 16px;
+}
+
+.modal-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.modal-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.modal-root {
+  font-size: 36px;
+  font-weight: 800;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.modal-scale-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.modal-alias {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+.modal-close:hover { background: #fee2e2; border-color: #fca5a5; color: #ef4444; }
+
+/* Note pills in modal */
+.modal-notes-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 16px 24px;
+}
+
+.modal-note {
+  padding: 5px 13px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #64748b;
+}
+.modal-note.is-root  { background: #3b82f6; color: #fff; }
+.modal-note.is-third { background: #f97316; color: #fff; }
+.modal-note.is-fifth { background: #8b5cf6; color: #fff; }
+
+/* Legend */
+.modal-legend {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.legend-dot.root  { background: #3b82f6; }
+.legend-dot.third { background: #f97316; }
+.legend-dot.fifth { background: #8b5cf6; }
+.legend-dot.other { background: #e2e8f0; border: 1.5px solid #cbd5e1; }
+
+/* Instrument tabs inside modal */
+.modal-inst-row {
+  display: flex;
+  gap: 4px;
+  padding: 0 24px 16px;
+}
+
+.modal-inst-btn {
+  padding: 5px 14px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.12s;
+}
+.modal-inst-btn.on {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+
+/* ── FRETBOARD ── */
+.fboard-wrap {
+  padding: 0 24px 28px;
+  overflow-x: auto;
+}
+
+.fboard {
+  width: 100%;
+}
+
+/* Fret number header row */
+.fret-num-row {
+  display: flex;
+  margin-left: 32px;
+  margin-bottom: 4px;
+  width: calc(100% - 32px);
+}
+
+.fret-num {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #475569;
+}
+
+/* String row */
+.str-row {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  width: 100%;
+}
+
+.str-label {
+  width: 32px;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  text-align: right;
+  padding-right: 8px;
+}
+
+/* Each fret cell */
+.fcell {
+  flex: 1;
+  height: 56px;
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The string line running through each cell */
+.fcell::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  background: #cbd5e1;
+  height: var(--sw, 1.5px);
+  z-index: 0;
+}
+
+/* Fret wire on the right edge of each cell (except open string cell) */
+.fcell.has-fret::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e2e8f0;
+  z-index: 1;
+}
+
+/* Nut — thicker line after the open cell */
+.fcell.is-nut::after {
+  width: 4px;
+  background: #94a3b8;
+}
+
+/* Note dot */
+.ndot {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  position: relative;
+  z-index: 2;
+  background: #f1f5f9;
+  color: #94a3b8;
+  border: 2px solid #e2e8f0;
+}
+.ndot.is-root  { background: #3b82f6; color: #fff; border-color: #1d4ed8; }
+.ndot.is-third { background: #f97316; color: #fff; border-color: #ea580c; }
+.ndot.is-fifth { background: #8b5cf6; color: #fff; border-color: #7c3aed; }
+
+/* Position markers row below fretboard */
+.fret-dots-row {
+  display: flex;
+  margin-left: 32px;
+  margin-top: 6px;
+  width: calc(100% - 32px);
+}
+.fret-dot-cell {
+  flex: 1;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+}
+.fret-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e2e8f0;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hdr">
+    <h1>Scale <span>Finder</span></h1>
+    <div class="hdr-sub">Guitar &amp; Bass Theory Tool</div>
+  </div>
+
+  <!-- INPUT -->
+  <div class="card">
+    <div class="card-title">Pick Your Notes</div>
+    <div class="note-grid" id="note-grid"></div>
+    <div class="ctrl-row">
+      <div class="inst-tog">
+        <button class="inst-btn on" data-inst="guitar">Guitar</button>
+        <button class="inst-btn"   data-inst="bass">Bass</button>
+      </div>
+      <button class="btn-clear" id="btn-clear">Clear</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="card">
+    <div class="card-title">Analysis</div>
+    <div id="results-content">
+      <div class="empty-msg">Pick some notes above to get started</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span class="modal-root" id="modal-root"></span>
+        <span class="modal-scale-name" id="modal-scale-name"></span>
+        <span class="modal-alias" id="modal-alias"></span>
+      </div>
+      <div class="modal-header-right">
+        <div class="modal-legend">
+          <div class="legend-item"><div class="legend-dot root"></div> Root</div>
+          <div class="legend-item"><div class="legend-dot third"></div> Third</div>
+          <div class="legend-item"><div class="legend-dot fifth"></div> Fifth</div>
+          <div class="legend-item"><div class="legend-dot other"></div> Scale</div>
+        </div>
+        <button class="modal-close" id="modal-close">&#x2715;</button>
+      </div>
+    </div>
+    <div class="modal-notes-row" id="modal-notes-row"></div>
+    <div class="modal-inst-row">
+      <button class="modal-inst-btn on" data-minst="guitar">Guitar</button>
+      <button class="modal-inst-btn"   data-minst="bass">Bass</button>
+    </div>
+    <div class="fboard-wrap">
+      <div class="fboard" id="fboard"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const ALT   = { 'C#':'Db','D#':'Eb','F#':'Gb','G#':'Ab','A#':'Bb' };
+
+const SCALES = [
+  { name:'Major',            alias:'Ionian',  type:'modes',          iv:[0,2,4,5,7,9,11] },
+  { name:'Dorian',                            type:'modes',          iv:[0,2,3,5,7,9,10] },
+  { name:'Phrygian',                          type:'modes',          iv:[0,1,3,5,7,8,10] },
+  { name:'Lydian',                            type:'modes',          iv:[0,2,4,6,7,9,11] },
+  { name:'Mixolydian',                        type:'modes',          iv:[0,2,4,5,7,9,10] },
+  { name:'Natural Minor',    alias:'Aeolian', type:'modes',          iv:[0,2,3,5,7,8,10] },
+  { name:'Locrian',                           type:'modes',          iv:[0,1,3,5,6,8,10] },
+  { name:'Harmonic Minor',                    type:'minor-variants', iv:[0,2,3,5,7,8,11] },
+  { name:'Melodic Minor',                     type:'minor-variants', iv:[0,2,3,5,7,9,11] },
+  { name:'Phrygian Dominant',                 type:'minor-variants', iv:[0,1,4,5,7,8,10] },
+  { name:'Major Pentatonic',                  type:'pentatonic',     iv:[0,2,4,7,9]      },
+  { name:'Minor Pentatonic',                  type:'pentatonic',     iv:[0,3,5,7,10]     },
+  { name:'Minor Blues',                       type:'blues',          iv:[0,3,5,6,7,10]   },
+  { name:'Major Blues',                       type:'blues',          iv:[0,2,3,4,7,9]    },
+  { name:'Whole Tone',                        type:'exotic',         iv:[0,2,4,6,8,10]   },
+  { name:'Diminished W-H',                    type:'exotic',         iv:[0,2,3,5,6,8,9,11]},
+  { name:'Diminished H-W',                    type:'exotic',         iv:[0,1,3,4,6,7,9,10]},
+  { name:'Augmented',                         type:'exotic',         iv:[0,3,4,7,8,11]   },
+  { name:'Double Harmonic',                   type:'exotic',         iv:[0,1,4,5,7,8,11] },
+  { name:'Lydian Dominant',                   type:'exotic',         iv:[0,2,4,6,7,9,10] },
+  { name:'Super Locrian',    alias:'Altered', type:'exotic',         iv:[0,1,3,4,6,8,10] },
+];
+
+const GROUP_LABELS = {
+  'modes':'Diatonic Modes','minor-variants':'Minor Variants',
+  'pentatonic':'Pentatonic','blues':'Blues','exotic':'Exotic / Symmetric',
+};
+const GROUP_ORDER = ['modes','minor-variants','pentatonic','blues','exotic'];
+
+// String definitions: open note index (C=0), string width for visual thickness
+const GUITAR_STRINGS = [
+  { label:'e', open:4,  sw:1   },
+  { label:'B', open:11, sw:1.5 },
+  { label:'G', open:7,  sw:2   },
+  { label:'D', open:2,  sw:2.5 },
+  { label:'A', open:9,  sw:3   },
+  { label:'E', open:4,  sw:3.5 },
+];
+const BASS_STRINGS = [
+  { label:'G', open:7,  sw:2   },
+  { label:'D', open:2,  sw:2.5 },
+  { label:'A', open:9,  sw:3   },
+  { label:'E', open:4,  sw:3.5 },
+];
+
+const FRET_MARKERS = new Set([3, 5, 7, 9]);
+const NUM_FRETS = 12;
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+
+const sel = new Set();
+let instrument = 'guitar';
+let modalInstrument = 'guitar';
+let modalRoot = 0;
+let modalScaleName = '';
+
+// ── NOTE GRID ─────────────────────────────────────────────────────────────────
+
+function buildNoteGrid() {
+  const grid = document.getElementById('note-grid');
+  NOTES.forEach((note, i) => {
+    const sharp = note.includes('#');
+    const btn = document.createElement('button');
+    btn.className = 'note-btn' + (sharp ? ' sharp' : '');
+    btn.dataset.i = i;
+    btn.innerHTML = `<span class="nn">${note}</span>${sharp ? `<span class="na">${ALT[note]}</span>` : ''}`;
+    btn.addEventListener('click', () => toggle(i));
+    grid.appendChild(btn);
+  });
+}
+
+function toggle(i) {
+  sel.has(i) ? sel.delete(i) : sel.add(i);
+  refreshButtons();
+  analyze();
+}
+
+function refreshButtons() {
+  document.querySelectorAll('.note-btn').forEach(b => b.classList.toggle('on', sel.has(+b.dataset.i)));
+}
+
+// ── INSTRUMENT TOGGLE ─────────────────────────────────────────────────────────
+
+document.querySelectorAll('.inst-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    instrument = b.dataset.inst;
+    document.querySelectorAll('.inst-btn').forEach(x => x.classList.toggle('on', x === b));
+  });
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  sel.clear(); refreshButtons(); analyze();
+});
+
+// ── ANALYSIS ──────────────────────────────────────────────────────────────────
+
+function analyze() {
+  const content = document.getElementById('results-content');
+  if (sel.size === 0) {
+    content.innerHTML = '<div class="empty-msg">Pick some notes above to get started</div>';
+    return;
+  }
+
+  const input = [...sel];
+  const matches = [];
+
+  for (const scale of SCALES) {
+    for (let root = 0; root < 12; root++) {
+      const scaleSet = scale.iv.map(iv => (root + iv) % 12);
+      if (input.every(n => scaleSet.includes(n))) {
+        matches.push({ root, scale, scaleSet, coverage: input.length / scale.iv.length });
+      }
+    }
+  }
+
+  matches.sort((a, b) => b.coverage - a.coverage || a.scale.iv.length - b.scale.iv.length);
+
+  if (matches.length === 0) {
+    content.innerHTML = '<div class="empty-msg">No standard scales match these notes</div>';
+    return;
+  }
+
+  const topKeys = [];
+  const seenKeys = new Set();
+  for (const m of matches) {
+    const k = `${m.root}:${m.scale.name}`;
+    if (!seenKeys.has(k)) { seenKeys.add(k); topKeys.push(m); }
+    if (topKeys.length >= 8) break;
+  }
+
+  let html = '<div class="key-section"><div class="section-title">Suggested Keys</div><div class="chips">';
+  topKeys.forEach((m, i) => {
+    const cls = 'chip' + (i < 3 ? ' top' : '');
+    const alias = m.scale.alias ? ` <span style="opacity:.55;font-weight:600;font-size:10px;">(${m.scale.alias})</span>` : '';
+    html += `<div class="${cls}">${NOTES[m.root]} ${m.scale.name}${alias}</div>`;
+  });
+  html += '</div></div>';
+
+  const byType = {};
+  for (const m of matches) {
+    const t = m.scale.type;
+    if (!byType[t]) byType[t] = [];
+    const key = `${m.root}:${m.scale.name}`;
+    if (!byType[t].some(x => `${x.root}:${x.scale.name}` === key)) byType[t].push(m);
+  }
+
+  for (const type of GROUP_ORDER) {
+    const group = byType[type];
+    if (!group || group.length === 0) continue;
+    html += `<div class="scale-group"><div class="group-label">${GROUP_LABELS[type]}</div><div class="scale-cards">`;
+    group.forEach((m, idx) => { html += buildCard(m, input, idx); });
+    html += `</div></div>`;
+  }
+
+  content.innerHTML = html;
+}
+
+function buildCard(m, input, idx) {
+  const rootName = NOTES[m.root];
+  const alias = m.scale.alias ? ` / ${m.scale.alias}` : '';
+
+  const orderedNotes = [];
+  for (let offset = 0; offset < 12; offset++) {
+    const ni = (m.root + offset) % 12;
+    if (m.scaleSet.includes(ni)) orderedNotes.push(ni);
+  }
+
+  let pills = '';
+  for (const ni of orderedNotes) {
+    const isInput = input.includes(ni), isRoot = ni === m.root;
+    let cls = 'snote';
+    if (isRoot && isInput) cls += ' root match';
+    else if (isRoot)       cls += ' root';
+    else if (isInput)      cls += ' match';
+    else                   cls += ' scale';
+    pills += `<div class="${cls}">${NOTES[ni]}</div>`;
+  }
+
+  return `
+  <div class="scale-card" style="animation-delay:${idx * 0.025}s" onclick="openScaleModal(${m.root}, '${m.scale.name}')">
+    <div class="scale-card-hdr">
+      <span class="scale-root">${rootName}</span>
+      <span class="scale-name">${m.scale.name}${alias}</span>
+      <span class="scale-count">${input.length}/${m.scale.iv.length}</span>
+    </div>
+    <div class="note-row">${pills}</div>
+  </div>`;
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+
+function triadIntervals(scale) {
+  const iv = scale.iv;
+  const third = iv.includes(4) ? 4 : iv.includes(3) ? 3 : null;
+  const fifth  = iv.includes(7) ? 7 : iv.includes(8) ? 8 : iv.includes(6) ? 6 : null;
+  return { third, fifth };
+}
+
+function noteRole(noteIdx, root, scale) {
+  const { third, fifth } = triadIntervals(scale);
+  const interval = (noteIdx - root + 12) % 12;
+  if (interval === 0)      return 'root';
+  if (interval === third)  return 'third';
+  if (interval === fifth)  return 'fifth';
+  return 'scale';
+}
+
+function openScaleModal(root, scaleName) {
+  const scale = SCALES.find(s => s.name === scaleName);
+  if (!scale) return;
+
+  modalRoot = root;
+  modalScaleName = scaleName;
+  modalInstrument = instrument;
+
+  document.getElementById('modal-root').textContent = NOTES[root];
+  document.getElementById('modal-scale-name').textContent = scaleName;
+  document.getElementById('modal-alias').textContent = scale.alias ? `/ ${scale.alias}` : '';
+
+  // Note pills with triad colors
+  const scaleNotes = scale.iv.map(iv => (root + iv) % 12);
+  let notePills = '';
+  for (let offset = 0; offset < 12; offset++) {
+    const ni = (root + offset) % 12;
+    if (scaleNotes.includes(ni)) {
+      const role = noteRole(ni, root, scale);
+      notePills += `<span class="modal-note is-${role}">${NOTES[ni]}</span>`;
+    }
+  }
+  document.getElementById('modal-notes-row').innerHTML = notePills;
+
+  document.querySelectorAll('.modal-inst-btn').forEach(b => {
+    b.classList.toggle('on', b.dataset.minst === modalInstrument);
+  });
+
+  renderFretboard(root, scale);
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function renderFretboard(root, scale) {
+  const scaleNotes = new Set(scale.iv.map(iv => (root + iv) % 12));
+  const strings = modalInstrument === 'bass' ? BASS_STRINGS : GUITAR_STRINGS;
+
+  // Fret number row
+  let html = '<div class="fret-num-row">';
+  for (let f = 0; f <= NUM_FRETS; f++) {
+    html += `<div class="fret-num">${f === 0 ? '' : f}</div>`;
+  }
+  html += '</div>';
+
+  // String rows
+  for (const str of strings) {
+    html += `<div class="str-row"><div class="str-label">${str.label}</div>`;
+    for (let f = 0; f <= NUM_FRETS; f++) {
+      const noteIdx = (str.open + f) % 12;
+      const inScale = scaleNotes.has(noteIdx);
+      const isNut   = f === 0;
+
+      let cellCls = 'fcell';
+      if (f > 0)   cellCls += ' has-fret';
+      if (isNut)   cellCls += ' is-nut'; // nut visual handled differently below
+
+      const role = inScale ? noteRole(noteIdx, root, scale) : null;
+      const dot = inScale
+        ? `<div class="ndot is-${role}">${NOTES[noteIdx]}</div>`
+        : '';
+
+      html += `<div class="${cellCls}" style="--sw:${str.sw}px">${dot}</div>`;
+    }
+    html += '</div>';
+  }
+
+  // Nut line: drawn as a thick right-border on cell 0 via the is-nut class
+  // Position marker dots
+  html += '<div class="fret-dots-row">';
+  for (let f = 0; f <= NUM_FRETS; f++) {
+    const isDouble = f === 12;
+    const isSingle = FRET_MARKERS.has(f);
+    html += `<div class="fret-dot-cell">`;
+    if (isDouble)      html += '<div class="fret-dot"></div><div class="fret-dot"></div>';
+    else if (isSingle) html += '<div class="fret-dot"></div>';
+    html += `</div>`;
+  }
+  html += '</div>';
+
+  document.getElementById('fboard').innerHTML = html;
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('modal-close').addEventListener('click', closeModal);
+
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// Modal instrument toggle
+document.querySelectorAll('.modal-inst-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    modalInstrument = b.dataset.minst;
+    document.querySelectorAll('.modal-inst-btn').forEach(x => x.classList.toggle('on', x === b));
+    const scale = SCALES.find(s => s.name === modalScaleName);
+    if (scale) renderFretboard(modalRoot, scale);
+  });
+});
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+
+buildNoteGrid();
+</script>
+</body>
+</html>
