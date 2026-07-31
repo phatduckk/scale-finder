@@ -214,6 +214,31 @@ body {
   box-shadow: 0 4px 12px rgba(59,130,246,0.1);
   transform: translateY(-1px);
 }
+.scale-card.picked {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 1px #22c55e, 0 4px 12px rgba(34,197,94,0.12);
+}
+.scale-card.picked:hover { border-color: #22c55e; }
+
+.scale-pick-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+.scale-pick-btn:hover { border-color: #86efac; color: #22c55e; background: #f0fdf4; }
+.scale-pick-btn.on { border-color: #22c55e; background: #22c55e; color: #fff; }
 
 .scale-card-hdr { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
 .scale-root { font-size: 20px; font-weight: 800; color: #1e293b; line-height: 1; }
@@ -990,6 +1015,7 @@ const NUM_FRETS = 12;
 // ── STATE ─────────────────────────────────────────────────────────────────────
 
 const sel = new Set();
+const pickedScales = new Set(); // "root:scaleName" keys
 let instrument = 'guitar';
 let modalInstrument = 'guitar';
 let modalRoot = 0;
@@ -1054,8 +1080,14 @@ function refreshButtons() {
 
 // ── INSTRUMENT TOGGLE ─────────────────────────────────────────────────────────
 
+function togglePick(root, scaleName) {
+  const key = `${root}:${scaleName}`;
+  pickedScales.has(key) ? pickedScales.delete(key) : pickedScales.add(key);
+  analyze();
+}
+
 document.getElementById('btn-clear').addEventListener('click', () => {
-  sel.clear(); refreshButtons(); analyze();
+  sel.clear(); pickedScales.clear(); refreshButtons(); analyze();
 });
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
@@ -1124,6 +1156,8 @@ function analyze() {
 function buildCard(m, input, idx) {
   const rootName = noteName(m.root);
   const alias = m.scale.alias ? ` / ${m.scale.alias}` : '';
+  const pickKey = `${m.root}:${m.scale.name}`;
+  const isPicked = pickedScales.has(pickKey);
 
   const orderedNotes = [];
   for (let offset = 0; offset < 12; offset++) {
@@ -1142,11 +1176,12 @@ function buildCard(m, input, idx) {
   }
 
   return `
-  <div class="scale-card" style="animation-delay:${idx * 0.025}s" onclick="openScaleModal(${m.root}, '${m.scale.name}')">
+  <div class="scale-card${isPicked ? ' picked' : ''}" style="animation-delay:${idx * 0.025}s" onclick="openScaleModal(${m.root}, '${m.scale.name}')">
     <div class="scale-card-hdr">
       <span class="scale-root">${rootName}</span>
       <span class="scale-name">${m.scale.name}${alias}</span>
       <span class="scale-count">${input.length}/${m.scale.iv.length}</span>
+      <button class="scale-pick-btn${isPicked ? ' on' : ''}" onclick="event.stopPropagation();togglePick(${m.root},'${m.scale.name}')">${isPicked ? '✓' : '+'}</button>
     </div>
     <div class="note-row">${pills}</div>
   </div>`;
@@ -1439,19 +1474,19 @@ async function fetchSongs() {
   return res.json();
 }
 
-async function saveSong(name, notes) {
+async function saveSong(name, notes, scales) {
   if (!IS_SERVED) {
     const songs = lsGetSongs();
     if (songs.some(s => s.name.toLowerCase() === name.toLowerCase()))
       throw Object.assign(new Error('duplicate'), { code: 'duplicate' });
-    const song = { id: Date.now(), name, notes, created_at: new Date().toISOString() };
+    const song = { id: Date.now(), name, notes, scales, created_at: new Date().toISOString() };
     localStorage.setItem('sf_songs', JSON.stringify([song, ...songs]));
     return song;
   }
   const res = await fetch(`${API}/songs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, notes }),
+    body: JSON.stringify({ name, notes, scales }),
   });
   if (res.status === 409) throw Object.assign(new Error('duplicate'), { code: 'duplicate' });
   if (!res.ok) throw new Error('save failed');
@@ -1488,6 +1523,8 @@ async function saveSetting(key, value) {
 
 // ── DRAWER ────────────────────────────────────────────────────────────────────
 
+let drawerSongs = [];
+
 function openDrawer() {
   document.getElementById('drawer-overlay').classList.add('open');
   loadDrawer();
@@ -1500,21 +1537,25 @@ function closeDrawer() {
 async function loadDrawer() {
   const list = document.getElementById('drawer-list');
   list.innerHTML = '<div class="drawer-empty">Loading…</div>';
-  const songs = await fetchSongs();
-  if (songs.length === 0) {
+  drawerSongs = await fetchSongs();
+  if (drawerSongs.length === 0) {
     list.innerHTML = '<div class="drawer-empty">No saved songs yet</div>';
     return;
   }
-  list.innerHTML = songs.map(song => {
-    const notes = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
-    const date  = new Date(song.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-    const pills = NOTES.map((n, i) =>
+  list.innerHTML = drawerSongs.map((song, idx) => {
+    const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
+    const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
+    const date   = new Date(song.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+    const pills  = NOTES.map((n, i) =>
       `<span class="song-note-pill${notes.includes(i) ? ' active' : ''}">${n}</span>`
     ).filter((_, i) => notes.includes(i)).join('');
+    const scaleTag = scales.length
+      ? `<span style="font-size:10px;font-weight:700;color:#22c55e;margin-left:4px;">${scales.length} scale${scales.length > 1 ? 's' : ''}</span>`
+      : '';
     return `
-    <div class="song-item" onclick="loadSong(${JSON.stringify(notes).replace(/"/g,"'")})">
+    <div class="song-item" onclick="loadSong(${idx})">
       <div class="song-item-top">
-        <span class="song-item-name">${song.name}</span>
+        <span class="song-item-name">${song.name}${scaleTag}</span>
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="song-item-date">${date}</span>
           <button class="song-item-delete" onclick="event.stopPropagation();removeSong(${song.id})" title="Delete">&#x2715;</button>
@@ -1525,9 +1566,14 @@ async function loadDrawer() {
   }).join('');
 }
 
-function loadSong(notes) {
+function loadSong(idx) {
+  const song   = drawerSongs[idx];
+  const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
+  const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
   sel.clear();
   notes.forEach(n => sel.add(n));
+  pickedScales.clear();
+  scales.forEach(k => pickedScales.add(k));
   refreshButtons();
   analyze();
   closeDrawer();
@@ -1584,7 +1630,7 @@ async function confirmSave() {
   }
 
   try {
-    await saveSong(name, [...sel]);
+    await saveSong(name, [...sel], [...pickedScales]);
     closeSaveModal();
   } catch (err) {
     if (err.code === 'duplicate') {
@@ -1606,7 +1652,7 @@ async function overwriteSave() {
   if (conflictId) await deleteSong(conflictId);
   conflictId = null;
   try {
-    await saveSong(name, [...sel]);
+    await saveSong(name, [...sel], [...pickedScales]);
     closeSaveModal();
   } catch (err) {
     if (err.code === 'duplicate') renameSave();

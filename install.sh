@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS songs (
   id         INT          NOT NULL AUTO_INCREMENT,
   name       VARCHAR(255) NOT NULL,
   notes      JSON         NOT NULL,
+  scales     JSON         NULL,
   created_at TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_name (name)

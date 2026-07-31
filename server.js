@@ -47,7 +47,11 @@ app.post('/api/songs', async (req, res) => {
   const { name, notes } = req.body;
   if (!name || !Array.isArray(notes)) return res.status(400).json({ error: 'name and notes required' });
   try {
-    const [result] = await pool.query('INSERT INTO songs (name, notes) VALUES (?, ?)', [name, JSON.stringify(notes)]);
+    const { scales } = req.body;
+    const [result] = await pool.query(
+      'INSERT INTO songs (name, notes, scales) VALUES (?, ?, ?)',
+      [name, JSON.stringify(notes), scales ? JSON.stringify(scales) : null]
+    );
     const [rows]   = await pool.query('SELECT * FROM songs WHERE id = ?', [result.insertId]);
     res.json(rows[0]);
   } catch (err) {
