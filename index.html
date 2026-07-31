@@ -1264,6 +1264,7 @@ const sel = new Set();
 const pickedScales = new Set(); // "root:scaleName" keys
 let currentSong = null;         // { id, name } of the loaded song, if any
 let chordRootFreq = new Map();  // noteIdx -> how many times it appeared as chord root
+let firstChordRoot = null;      // root note of the very first chord parsed (likely the tonic)
 let instrument = 'guitar';
 let modalInstrument = 'guitar';
 let modalRoot = 0;
@@ -1324,7 +1325,7 @@ function buildNoteGrid() {
 
 function toggle(i) {
   sel.has(i) ? sel.delete(i) : sel.add(i);
-  chordRootFreq.clear();
+  chordRootFreq.clear(); firstChordRoot = null;
   refreshButtons();
   analyze();
 }
@@ -1343,7 +1344,7 @@ function togglePick(root, scaleName) {
 }
 
 document.getElementById('btn-clear').addEventListener('click', () => {
-  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); currentSong = null; refreshButtons(); analyze();
+  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; currentSong = null; refreshButtons(); analyze();
 });
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
@@ -1400,7 +1401,13 @@ function analyze() {
 
   matches.sort((a, b) => {
     if (b.coverage !== a.coverage) return b.coverage - a.coverage;
-    // Prefer scales whose root appeared more often as a chord root in the import/input
+    // First chord root is the strongest tonic signal (songs almost always start on tonic)
+    if (firstChordRoot !== null) {
+      const aFirst = a.root === firstChordRoot ? 1 : 0;
+      const bFirst = b.root === firstChordRoot ? 1 : 0;
+      if (bFirst !== aFirst) return bFirst - aFirst;
+    }
+    // Then by overall chord root frequency
     const freqDiff = (chordRootFreq.get(b.root) || 0) - (chordRootFreq.get(a.root) || 0);
     if (freqDiff !== 0) return freqDiff;
     return a.scale.iv.length - b.scale.iv.length;
@@ -1720,15 +1727,17 @@ function chordToNotes(token) {
 function parseChords(text) {
   const found = new Set();
   const rootFreq = new Map();
+  let firstRoot = null;
   for (const token of text.split(/[\s,|()\[\]\/\-\\]+/)) {
     const notes = chordToNotes(token);
     if (notes.length > 0) {
       notes.forEach(n => found.add(n));
-      // notes[0] is always the root (interval 0)
-      rootFreq.set(notes[0], (rootFreq.get(notes[0]) || 0) + 1);
+      const root = notes[0]; // interval[0] is always 0, so notes[0] is the root
+      if (firstRoot === null) firstRoot = root;
+      rootFreq.set(root, (rootFreq.get(root) || 0) + 1);
     }
   }
-  return { notes: found, rootFreq };
+  return { notes: found, rootFreq, firstRoot };
 }
 
 function parseTabs(text) {
@@ -1748,9 +1757,10 @@ function parseTabs(text) {
   return found;
 }
 
-function applyImportedNotes({ notes, rootFreq }) {
+function applyImportedNotes({ notes, rootFreq, firstRoot = null }) {
   if (notes.size === 0) { alert('No recognizable notes or chords found in this file.'); return; }
   chordRootFreq = rootFreq;
+  firstChordRoot = firstRoot;
   sel.clear();
   notes.forEach(n => sel.add(n));
   refreshButtons();
@@ -1761,8 +1771,9 @@ function addChordsFromInput() {
   const input = document.getElementById('chord-input');
   const text = input.value.trim();
   if (!text) return;
-  const { notes, rootFreq } = parseChords(text);
+  const { notes, rootFreq, firstRoot } = parseChords(text);
   if (notes.size === 0) return;
+  if (firstChordRoot === null) firstChordRoot = firstRoot;
   rootFreq.forEach((count, note) => chordRootFreq.set(note, (chordRootFreq.get(note) || 0) + count));
   notes.forEach(n => sel.add(n));
   input.value = '';
