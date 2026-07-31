@@ -85,11 +85,9 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 .note-btn .nn { font-size: 16px; line-height: 1; }
-.note-btn .na { font-size: 9px; color: #6272a4; margin-top: 2px; font-weight: 600; }
-.note-btn.sharp .nn { font-size: 13px; }
 .note-btn:hover { border-color: #6272a4; background: #44475a; color: #f8f8f2; }
 .note-btn.on { background: #001e36; border-color: #1a6aaa; color: #31a8ff; box-shadow: 0 2px 8px rgba(49,168,255,0.3); }
-.note-btn.on .na { color: rgba(255,255,255,0.7); }
+
 
 /* ── CONTROLS ── */
 .ctrl-row {
@@ -926,7 +924,13 @@ body {
 
   <!-- INPUT -->
   <div class="card">
-    <div class="card-title">Pick Your Notes</div>
+    <div style="display:flex;align-items:center;margin-bottom:18px;">
+      <div class="card-title" style="margin-bottom:0;flex:1;">Pick Your Notes</div>
+      <div class="acc-tog" id="main-acc-tog">
+        <button class="acc-btn" id="acc-sharp" onclick="setAccidental(false)">#</button>
+        <button class="acc-btn" id="acc-flat" onclick="setAccidental(true)">♭</button>
+      </div>
+    </div>
     <div class="note-grid" id="note-grid"></div>
     <div class="ctrl-row">
       <div style="display:flex;gap:8px;margin-left:auto;">
@@ -1051,6 +1055,12 @@ function noteName(idx) {
 function setAccidental(flats) {
   useFlats = flats;
   saveSetting('useFlats', flats ? '1' : '0').catch(() => {});
+  document.getElementById('acc-sharp').classList.toggle('on', !flats);
+  document.getElementById('acc-flat').classList.toggle('on', flats);
+  document.querySelectorAll('.note-btn').forEach(b => {
+    const i = +b.dataset.i;
+    b.querySelector('.nn').textContent = noteName(i);
+  });
   analyze();
   const overlay = document.getElementById('modal-overlay');
   if (overlay.classList.contains('open')) {
@@ -1079,11 +1089,10 @@ function setAccidental(flats) {
 function buildNoteGrid() {
   const grid = document.getElementById('note-grid');
   NOTES.forEach((note, i) => {
-    const sharp = note.includes('#');
     const btn = document.createElement('button');
-    btn.className = 'note-btn' + (sharp ? ' sharp' : '');
+    btn.className = 'note-btn';
     btn.dataset.i = i;
-    btn.innerHTML = `<span class="nn">${note}</span>${sharp ? `<span class="na">${ALT[note]}</span>` : ''}`;
+    btn.innerHTML = `<span class="nn">${noteName(i)}</span>`;
     btn.addEventListener('click', () => toggle(i));
     grid.appendChild(btn);
   });
@@ -1163,7 +1172,7 @@ function analyze() {
   }
 
   let html = buildMyScales();
-  html += `<div class="key-section"><div class="acc-tog-row"><div class="section-title">Suggested Keys</div><div class="acc-tog"><button class="acc-btn${!useFlats?' on':''}" onclick="setAccidental(false)">#</button><button class="acc-btn${useFlats?' on':''}" onclick="setAccidental(true)">♭</button></div></div><div class="chips">`;
+  html += `<div class="key-section"><div class="section-title" style="margin-bottom:10px">Suggested Keys</div><div class="chips">`;
   topKeys.forEach((m, i) => {
     const cls = 'chip' + (i < 3 ? ' top' : '');
     const alias = m.scale.alias ? ` <span style="opacity:.55;font-weight:600;font-size:10px;">(${m.scale.alias})</span>` : '';
@@ -1741,7 +1750,14 @@ fetchSettings().then(s => {
   }
   if (s.useFlats === '1') {
     useFlats = true;
+    document.getElementById('acc-sharp').classList.remove('on');
+    document.getElementById('acc-flat').classList.add('on');
+    document.querySelectorAll('.note-btn').forEach(b => {
+      b.querySelector('.nn').textContent = noteName(+b.dataset.i);
+    });
     analyze();
+  } else {
+    document.getElementById('acc-sharp').classList.add('on');
   }
 }).catch(() => {});
 </script>
