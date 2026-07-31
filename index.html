@@ -282,10 +282,99 @@ body {
   transition: all 0.12s ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: visible;
 }
 .note-btn .nn { font-size: 16px; line-height: 1; }
+.note-btn .chord-label {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 20px;
+  background: #5b8cff;
+  color: #fff;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  z-index: 10;
+  pointer-events: none;
+}
+.note-btn .chord-label.on { opacity: 1; }
 .note-btn:hover { border-color: var(--accent-blue-border); background: var(--accent-blue-bg); color: var(--accent-blue-text); }
 .note-btn.on { background: var(--accent-blue-bg); border-color: var(--accent-blue-border); color: var(--accent-blue-text); box-shadow: 0 2px 8px rgba(91,140,255,0.3); }
+
+/* ── CHORD POPOVER ── */
+.chord-popover {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding-top: 10px;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.14s ease;
+  white-space: nowrap;
+}
+.note-btn:hover .chord-popover { opacity: 1; pointer-events: auto; }
+.chord-popover-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 210px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.5);
+  position: relative;
+}
+.chord-popover-box::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: var(--border);
+}
+.chord-popover-box::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% - 1px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-bottom-color: var(--bg-card);
+  z-index: 1;
+}
+.chord-chip {
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  flex: 0 0 auto;
+}
+.chord-chip:hover {
+  background: var(--accent-blue-bg);
+  border-color: var(--accent-blue-border);
+  color: var(--accent-blue-text);
+}
+.chord-chip.active {
+  background: var(--accent-teal-bg);
+  border-color: var(--accent-teal-border);
+  color: var(--accent-teal-text);
+}
 
 
 /* ── CONTROLS ── */
@@ -340,7 +429,7 @@ body {
   border-radius: 20px;
   transition: all 0.12s;
 }
-.btn-import:hover { background: var(--accent-purple-bg); border-color: var(--accent-purple-border); }
+.btn-import:hover { filter: brightness(1.12); }
 
 /* ── EMPTY STATE ── */
 .empty-msg {
@@ -799,7 +888,7 @@ body {
   border-radius: 20px;
   transition: all 0.12s;
 }
-.btn-save:hover { background: #1a3325; border-color: var(--accent-green-text); }
+.btn-save:hover { filter: brightness(1.12); }
 
 /* ── SONG ITEMS ── */
 .song-item {
@@ -1225,6 +1314,7 @@ const pickedScales = new Set(); // "root:scaleName" keys
 let currentSong = null;         // { id, name } of the loaded song, if any
 let chordRootFreq = new Map();  // noteIdx -> how many times it appeared as chord root
 let firstChordRoot = null;      // root note of the very first chord parsed (likely the tonic)
+let appliedChords = new Map();  // noteIdx -> chord quality applied via popover
 let instrument = 'guitar';
 let modalInstrument = 'guitar';
 let modalRoot = 0;
@@ -1242,8 +1332,7 @@ function setAccidental(flats) {
   document.getElementById('acc-sharp').classList.toggle('on', !flats);
   document.getElementById('acc-flat').classList.toggle('on', flats);
   document.querySelectorAll('#note-grid .note-btn').forEach(b => {
-    const i = +b.dataset.i;
-    b.innerHTML = `<span class="nn">${noteName(i)}</span>`;
+    b.querySelector('.nn').textContent = noteName(+b.dataset.i);
   });
   refreshButtons();
   analyze();
@@ -1271,27 +1360,86 @@ function setAccidental(flats) {
 
 // ── NOTE GRID ─────────────────────────────────────────────────────────────────
 
+const POPOVER_CHORDS = ['m','7','maj7','m7','dim','aug','sus2','sus4','m7b5','dim7','add9','m9'];
+
 function buildNoteGrid() {
   const grid = document.getElementById('note-grid');
   NOTES.forEach((note, i) => {
     const btn = document.createElement('button');
     btn.className = 'note-btn';
     btn.dataset.i = i;
-    btn.innerHTML = `<span class="nn">${noteName(i)}</span>`;
-    btn.addEventListener('click', () => toggle(i));
+
+    const nn = document.createElement('span');
+    nn.className = 'nn';
+    nn.textContent = noteName(i);
+    btn.appendChild(nn);
+
+    const lbl = document.createElement('span');
+    lbl.className = 'chord-label';
+    btn.appendChild(lbl);
+
+    const pop = document.createElement('div');
+    pop.className = 'chord-popover';
+    const box = document.createElement('div');
+    box.className = 'chord-popover-box';
+    POPOVER_CHORDS.forEach(q => {
+      const chip = document.createElement('button');
+      chip.className = 'chord-chip';
+      chip.dataset.q = q;
+      chip.textContent = q;
+      chip.addEventListener('click', e => { e.stopPropagation(); applyChord(i, q); });
+      box.appendChild(chip);
+    });
+    pop.appendChild(box);
+    btn.appendChild(pop);
+
+    btn.addEventListener('click', e => {
+      if (e.shiftKey) applyChord(i, 'm');
+      else toggle(i);
+    });
     grid.appendChild(btn);
   });
 }
 
 function toggle(i) {
-  sel.has(i) ? sel.delete(i) : sel.add(i);
+  if (sel.has(i)) { sel.delete(i); appliedChords.delete(i); }
+  else sel.add(i);
+  chordRootFreq.clear(); firstChordRoot = null;
+  refreshButtons();
+  analyze();
+}
+
+function applyChord(rootIdx, quality) {
+  const ivs = CHORD_INTERVALS[quality];
+  if (!ivs) return;
+  const notes = ivs.map(iv => (rootIdx + iv) % 12);
+  const alreadyActive = appliedChords.get(rootIdx) === quality && notes.every(n => sel.has(n));
+  if (alreadyActive) {
+    notes.forEach(n => sel.delete(n));
+    appliedChords.delete(rootIdx);
+  } else {
+    notes.forEach(n => sel.add(n));
+    appliedChords.set(rootIdx, quality);
+  }
   chordRootFreq.clear(); firstChordRoot = null;
   refreshButtons();
   analyze();
 }
 
 function refreshButtons() {
-  document.querySelectorAll('.note-btn').forEach(b => b.classList.toggle('on', sel.has(+b.dataset.i)));
+  document.querySelectorAll('.note-btn').forEach(b => {
+    const i = +b.dataset.i;
+    b.classList.toggle('on', sel.has(i));
+    const lbl = b.querySelector('.chord-label');
+    const applied = appliedChords.get(i);
+    if (lbl) {
+      lbl.textContent = applied || '';
+      lbl.classList.toggle('on', !!applied);
+    }
+    b.querySelectorAll('.chord-chip').forEach(chip => {
+      chip.classList.toggle('active', chip.dataset.q === applied);
+    });
+  });
 }
 
 // ── INSTRUMENT TOGGLE ─────────────────────────────────────────────────────────
@@ -1304,7 +1452,7 @@ function togglePick(root, scaleName) {
 }
 
 document.getElementById('btn-clear').addEventListener('click', () => {
-  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; currentSong = null; refreshButtons(); analyze();
+  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; refreshButtons(); analyze();
 });
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
@@ -1676,28 +1824,40 @@ const CHORD_INTERVALS = {
 function chordToNotes(token) {
   // Strict: uppercase root only, must consume full token (no trailing junk like "Chords")
   const m = token.match(/^([A-G][#b]?)(m7b5|mM7|maj7|m7|dim7|dim|aug|sus2|sus4|madd9|add9|m9|m|5|7|9)?$/);
-  if (!m) return [];
+  if (!m) return null;
   const root = NOTE_TO_IDX[m[1]];
-  if (root === undefined) return [];
+  if (root === undefined) return null;
   const quality = m[2] || 'maj';
   const ivs = CHORD_INTERVALS[quality] || CHORD_INTERVALS['maj'];
-  return ivs.map(iv => (root + iv) % 12);
+  return { notes: ivs.map(iv => (root + iv) % 12), root, quality };
 }
 
 function parseChords(text) {
   const found = new Set();
   const rootFreq = new Map();
+  const rootQualFreq = new Map(); // rootIdx → Map(quality → count)
   let firstRoot = null;
   for (const token of text.split(/[\s,|()\[\]\/\-\\]+/)) {
-    const notes = chordToNotes(token);
-    if (notes.length > 0) {
-      notes.forEach(n => found.add(n));
-      const root = notes[0]; // interval[0] is always 0, so notes[0] is the root
-      if (firstRoot === null) firstRoot = root;
-      rootFreq.set(root, (rootFreq.get(root) || 0) + 1);
-    }
+    const result = chordToNotes(token);
+    if (!result) continue;
+    const { notes, root, quality } = result;
+    notes.forEach(n => found.add(n));
+    if (firstRoot === null) firstRoot = root;
+    rootFreq.set(root, (rootFreq.get(root) || 0) + 1);
+    if (!rootQualFreq.has(root)) rootQualFreq.set(root, new Map());
+    const qm = rootQualFreq.get(root);
+    qm.set(quality, (qm.get(quality) || 0) + 1);
   }
-  return { notes: found, rootFreq, firstRoot };
+  // Pick the dominant non-maj quality per root
+  const rootQuality = new Map();
+  for (const [root, qm] of rootQualFreq) {
+    let bestQ = null, bestCount = 0;
+    for (const [q, count] of qm) {
+      if (q !== 'maj' && count > bestCount) { bestQ = q; bestCount = count; }
+    }
+    if (bestQ) rootQuality.set(root, bestQ);
+  }
+  return { notes: found, rootFreq, firstRoot, rootQuality };
 }
 
 function parseTabs(text) {
@@ -1717,10 +1877,14 @@ function parseTabs(text) {
   return found;
 }
 
-function applyImportedNotes({ notes, rootFreq, firstRoot = null }) {
+function applyImportedNotes({ notes, rootFreq, firstRoot = null, rootQuality = new Map() }) {
   if (notes.size === 0) { alert('No recognizable notes or chords found in this file.'); return; }
   chordRootFreq = rootFreq;
   firstChordRoot = firstRoot;
+  appliedChords.clear();
+  for (const [root, quality] of rootQuality) {
+    if (POPOVER_CHORDS.includes(quality)) appliedChords.set(root, quality);
+  }
   sel.clear();
   notes.forEach(n => sel.add(n));
   refreshButtons();
