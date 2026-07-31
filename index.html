@@ -1886,6 +1886,7 @@ async function confirmSave() {
   try {
     await saveSong(name, [...sel], [...pickedScales]);
     closeSaveModal();
+    loadDrawer();
   } catch (err) {
     if (err.code === 'duplicate') {
       // DB caught it (race condition) — surface the conflict UI
@@ -1908,6 +1909,7 @@ async function overwriteSave() {
   try {
     await saveSong(name, [...sel], [...pickedScales]);
     closeSaveModal();
+    loadDrawer();
   } catch (err) {
     if (err.code === 'duplicate') renameSave();
   }
