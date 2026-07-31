@@ -1263,6 +1263,7 @@ const NUM_FRETS = 12;
 const sel = new Set();
 const pickedScales = new Set(); // "root:scaleName" keys
 let currentSong = null;         // { id, name } of the loaded song, if any
+let chordRootFreq = new Map();  // noteIdx -> how many times it appeared as chord root
 let instrument = 'guitar';
 let modalInstrument = 'guitar';
 let modalRoot = 0;
@@ -1323,6 +1324,7 @@ function buildNoteGrid() {
 
 function toggle(i) {
   sel.has(i) ? sel.delete(i) : sel.add(i);
+  chordRootFreq.clear();
   refreshButtons();
   analyze();
 }
@@ -1341,7 +1343,7 @@ function togglePick(root, scaleName) {
 }
 
 document.getElementById('btn-clear').addEventListener('click', () => {
-  sel.clear(); pickedScales.clear(); currentSong = null; refreshButtons(); analyze();
+  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); currentSong = null; refreshButtons(); analyze();
 });
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
@@ -1396,7 +1398,13 @@ function analyze() {
     }
   }
 
-  matches.sort((a, b) => b.coverage - a.coverage || a.scale.iv.length - b.scale.iv.length);
+  matches.sort((a, b) => {
+    if (b.coverage !== a.coverage) return b.coverage - a.coverage;
+    // Prefer scales whose root appeared more often as a chord root in the import/input
+    const freqDiff = (chordRootFreq.get(b.root) || 0) - (chordRootFreq.get(a.root) || 0);
+    if (freqDiff !== 0) return freqDiff;
+    return a.scale.iv.length - b.scale.iv.length;
+  });
 
   if (matches.length === 0) {
     content.innerHTML = '<div class="empty-msg">No standard scales match these notes</div>';
@@ -1711,10 +1719,16 @@ function chordToNotes(token) {
 
 function parseChords(text) {
   const found = new Set();
+  const rootFreq = new Map();
   for (const token of text.split(/[\s,|()\[\]\/\-\\]+/)) {
-    chordToNotes(token).forEach(n => found.add(n));
+    const notes = chordToNotes(token);
+    if (notes.length > 0) {
+      notes.forEach(n => found.add(n));
+      // notes[0] is always the root (interval 0)
+      rootFreq.set(notes[0], (rootFreq.get(notes[0]) || 0) + 1);
+    }
   }
-  return found;
+  return { notes: found, rootFreq };
 }
 
 function parseTabs(text) {
@@ -1734,8 +1748,9 @@ function parseTabs(text) {
   return found;
 }
 
-function applyImportedNotes(notes) {
+function applyImportedNotes({ notes, rootFreq }) {
   if (notes.size === 0) { alert('No recognizable notes or chords found in this file.'); return; }
+  chordRootFreq = rootFreq;
   sel.clear();
   notes.forEach(n => sel.add(n));
   refreshButtons();
@@ -1746,8 +1761,9 @@ function addChordsFromInput() {
   const input = document.getElementById('chord-input');
   const text = input.value.trim();
   if (!text) return;
-  const notes = parseChords(text);
+  const { notes, rootFreq } = parseChords(text);
   if (notes.size === 0) return;
+  rootFreq.forEach((count, note) => chordRootFreq.set(note, (chordRootFreq.get(note) || 0) + count));
   notes.forEach(n => sel.add(n));
   input.value = '';
   refreshButtons();
@@ -1786,8 +1802,11 @@ document.getElementById('file-import').addEventListener('change', async e => {
 
   // Try tab notation first (more specific); fall back to chord names
   const tabNotes = parseTabs(text);
-  const notes = tabNotes.size > 0 ? tabNotes : parseChords(text);
-  applyImportedNotes(notes);
+  if (tabNotes.size > 0) {
+    applyImportedNotes({ notes: tabNotes, rootFreq: new Map() });
+  } else {
+    applyImportedNotes(parseChords(text));
+  }
 });
 
 // ── STORAGE ───────────────────────────────────────────────────────────────────
