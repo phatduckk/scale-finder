@@ -750,11 +750,19 @@ body {
 /* Instrument tabs inside modal */
 .modal-inst-row {
   display: flex;
-  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   padding: 0 24px 16px;
+  flex-wrap: wrap;
 }
 
-.modal-inst-btn {
+.modal-inst-group, .modal-view-group {
+  display: flex;
+  gap: 4px;
+}
+
+.modal-inst-btn, .modal-view-btn {
   padding: 5px 14px;
   border: 2px solid #e2e8f0;
   background: #f8fafc;
@@ -766,7 +774,7 @@ body {
   border-radius: 8px;
   transition: all 0.12s;
 }
-.modal-inst-btn.on {
+.modal-inst-btn.on, .modal-view-btn.on {
   background: #eff6ff;
   border-color: #bfdbfe;
   color: #2563eb;
@@ -899,8 +907,23 @@ body {
 .ndot.is-root  { background: var(--accent-blue-bg); color: var(--accent-blue-text); border-color: var(--accent-blue-border); }
 .ndot.is-third { background: var(--accent-teal-bg); color: var(--accent-teal-text); border-color: var(--accent-teal-border); }
 .ndot.is-fifth { background: var(--accent-purple-bg); color: var(--accent-purple-text); border-color: var(--accent-purple-border); }
-.ndot.user-dimmed { opacity: 0.15; cursor: pointer; }
 .ndot { cursor: pointer; }
+.ndot.is-anchor { box-shadow: 0 0 0 3px rgba(37,99,235,0.4); }
+.anchor-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  font-size: 10px;
+  line-height: 15px;
+  text-align: center;
+  font-weight: 800;
+  z-index: 3;
+}
 
 /* Position markers row below fretboard */
 .fret-dots-row {
@@ -1291,8 +1314,14 @@ body {
     </div>
     <div class="modal-notes-row" id="modal-notes-row"></div>
     <div class="modal-inst-row">
-      <button class="modal-inst-btn on" data-minst="guitar">Guitar</button>
-      <button class="modal-inst-btn"   data-minst="bass">Bass</button>
+      <div class="modal-inst-group">
+        <button class="modal-inst-btn on" data-minst="guitar">Guitar</button>
+        <button class="modal-inst-btn"   data-minst="bass">Bass</button>
+      </div>
+      <div class="modal-view-group">
+        <button class="modal-view-btn on" data-mview="all">All Notes</button>
+        <button class="modal-view-btn"    data-mview="position">Position</button>
+      </div>
     </div>
     <div class="fboard-wrap">
       <div class="fboard" id="fboard"></div>
@@ -1383,6 +1412,8 @@ let firstChordRoot = null;      // root note of the very first chord parsed (lik
 let appliedChords = new Map();  // noteIdx -> chord quality applied via popover
 let instrument = 'guitar';
 let modalInstrument = 'guitar';
+let modalView = 'all'; // 'all' | 'position'
+let anchorNote = null; // { stringIdx, fret, direction: 1 | -1 } — click-to-anchor run, overrides modalView when set
 let modalRoot = 0;
 let modalScaleName = '';
 let useFlats = false;
@@ -1718,17 +1749,157 @@ function openScaleModal(root, scaleName) {
   document.querySelectorAll('.modal-inst-btn').forEach(b => {
     b.classList.toggle('on', b.dataset.minst === modalInstrument);
   });
+  document.querySelectorAll('.modal-view-btn').forEach(b => {
+    b.classList.toggle('on', b.dataset.mview === modalView);
+  });
 
   litFrets = new Set();
+  anchorNote = null;
   renderFretboard(root, scale);
   syncModalPin();
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
+// Builds a single "lesson book" position for a scale by walking its notes in
+// ascending pitch order up the neck, string by string — the same way printed
+// fingering charts (3-notes-per-string major patterns, 2-notes-per-string
+// pentatonic boxes, etc.) are actually constructed. Each string is played
+// until the next note would require more than a comfortable ~3-fret stretch
+// from the first note taken on that string, at which point the walk moves up
+// to the next string and picks up where it left off. The walk keeps going
+// (wrapping back to the root an octave up, and beyond) until it runs out of
+// strings, so a 6-string guitar naturally fills out further than a 4-string
+// bass. Returns the exact set of "stringIndex:fret" positions to draw — not a
+// fret range — since only these specific notes form a single coherent shape.
+function computeScalePositionNotes(strings, scale, root) {
+  const seq = scale.iv.map(iv => (root + iv) % 12); // ascending pitch classes, root first
+  const n = seq.length;
+  const orderedStrings = [...strings].reverse(); // low string first
+  const MAX_STRING_SPAN = 3; // widest comfortable single-string stretch in one hand position
+
+  const findFret = (str, pitch, minFret) => {
+    for (let f = minFret; f <= NUM_FRETS; f++) {
+      if ((str.open + f) % 12 === pitch) return f;
+    }
+    return null;
+  };
+
+  const lowStr = orderedStrings[0];
+  // Root as the open string is the natural, obvious choice — don't skip past it
+  // searching for a fretted occurrence (that would land an octave up at best).
+  let anchorFret = lowStr.open % 12 === root ? 0 : findFret(lowStr, root, 1);
+  if (anchorFret === null) anchorFret = findFret(lowStr, root, 0);
+  if (anchorFret === null) return new Set();
+
+  const placements = new Set();
+  const place = (orderedIdx, fret) => placements.add(`${strings.length - 1 - orderedIdx}:${fret}`);
+
+  let stringIdx = 0;
+  let firstFretOnString = anchorFret;
+  let lastFret = anchorFret;
+  place(0, anchorFret);
+
+  // Pentatonic/blues-sized scales (<=6 notes) are conventionally shown as a fixed
+  // box using the whole width of the instrument. Bigger scales (7+ notes — major,
+  // the other diatonic modes, minor variants, diminished) are conventionally
+  // taught one octave at a time, so the walk stops as soon as the root recurs.
+  const stopAtOctave = n >= 7;
+
+  const maxSteps = n * 4; // safety cap — plenty to fill out even a 6-string guitar
+  for (let i = 1; i <= maxSteps; i++) {
+    const pitch = seq[i % n];
+    let str = orderedStrings[stringIdx];
+    let fret = findFret(str, pitch, lastFret + 1);
+    if (fret !== null && fret - firstFretOnString > MAX_STRING_SPAN) fret = null;
+
+    if (fret === null) {
+      if (stringIdx + 1 >= orderedStrings.length) break; // out of strings — position is complete
+      stringIdx++;
+      str = orderedStrings[stringIdx];
+      // Allow fret 0 here (unlike the anchor string): if this string's open note
+      // happens to be the note we need, the alternative is jumping a full octave
+      // up to the next occurrence, which is far worse than one incidental open note.
+      fret = findFret(str, pitch, Math.max(0, lastFret - 6));
+      if (fret === null) break;
+      firstFretOnString = fret;
+    }
+
+    place(stringIdx, fret);
+    lastFret = fret;
+    if (stopAtOctave && pitch === root) break; // reached the octave — one octave is the whole shape
+  }
+
+  return placements;
+}
+
+// Same walk as computeScalePositionNotes, but starting from a specific note the
+// user clicked (any scale degree, not just the root) and running in a chosen
+// direction — ascending toward higher-pitched strings/frets, or descending
+// toward lower ones — for sketching a fill that starts wherever a bass line
+// actually needs it to.
+function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anchorFret, direction) {
+  const seq = scale.iv.map(iv => (root + iv) % 12);
+  const n = seq.length;
+  const orderedStrings = [...strings].reverse(); // low string first
+  const MAX_STRING_SPAN = 3;
+
+  const startPitch = (strings[anchorStringIdx].open + anchorFret) % 12;
+  const startDegree = seq.indexOf(startPitch);
+  if (startDegree === -1) return new Set(); // clicked note isn't actually in the scale
+
+  const findFret = (str, pitch, fromFret) => {
+    if (direction > 0) {
+      for (let f = fromFret; f <= NUM_FRETS; f++) if ((str.open + f) % 12 === pitch) return f;
+    } else {
+      for (let f = fromFret; f >= 0; f--) if ((str.open + f) % 12 === pitch) return f;
+    }
+    return null;
+  };
+
+  const placements = new Set();
+  const place = (orderedIdx, fret) => placements.add(`${strings.length - 1 - orderedIdx}:${fret}`);
+
+  let orderedIdx = strings.length - 1 - anchorStringIdx;
+  let firstFretOnString = anchorFret;
+  let lastFret = anchorFret;
+  place(orderedIdx, anchorFret);
+
+  const stopAtOctave = n >= 7;
+  const maxSteps = n * 4;
+  for (let i = 1; i <= maxSteps; i++) {
+    const degree = ((startDegree + direction * i) % n + n) % n;
+    const pitch = seq[degree];
+    let str = orderedStrings[orderedIdx];
+    let fret = findFret(str, pitch, lastFret + direction);
+    if (fret !== null && Math.abs(fret - firstFretOnString) > MAX_STRING_SPAN) fret = null;
+
+    if (fret === null) {
+      const nextIdx = orderedIdx + direction;
+      if (nextIdx < 0 || nextIdx >= orderedStrings.length) break; // out of strings — position is complete
+      orderedIdx = nextIdx;
+      str = orderedStrings[orderedIdx];
+      const searchFrom = direction > 0 ? Math.max(0, lastFret - 6) : Math.min(NUM_FRETS, lastFret + 6);
+      fret = findFret(str, pitch, searchFrom);
+      if (fret === null) break;
+      firstFretOnString = fret;
+    }
+
+    place(orderedIdx, fret);
+    lastFret = fret;
+    if (stopAtOctave && pitch === startPitch) break; // back to the same note an octave away
+  }
+
+  return placements;
+}
+
 function renderFretboard(root, scale) {
   const scaleNotes = new Set(scale.iv.map(iv => (root + iv) % 12));
   const strings = modalInstrument === 'bass' ? BASS_STRINGS : GUITAR_STRINGS;
+  let positionNotes = anchorNote
+    ? computeAnchoredPositionNotes(strings, scale, root, anchorNote.stringIdx, anchorNote.fret, anchorNote.direction)
+    : modalView === 'position' ? computeScalePositionNotes(strings, scale, root) : null;
+  if (positionNotes && positionNotes.size === 0) positionNotes = null; // couldn't build one — show everything
 
   // Fret number row
   let html = '<div class="fret-num-row">';
@@ -1738,11 +1909,13 @@ function renderFretboard(root, scale) {
   html += '</div>';
 
   // String rows
-  for (const str of strings) {
+  for (let si = 0; si < strings.length; si++) {
+    const str = strings[si];
     html += `<div class="str-row"><div class="str-label">${str.label}</div>`;
     for (let f = 0; f <= NUM_FRETS; f++) {
       const noteIdx = (str.open + f) % 12;
-      const inScale = scaleNotes.has(noteIdx);
+      const inPosition = !positionNotes || positionNotes.has(`${si}:${f}`);
+      const inScale = scaleNotes.has(noteIdx) && inPosition;
       const isNut   = f === 0;
 
       let cellCls = 'fcell';
@@ -1750,8 +1923,10 @@ function renderFretboard(root, scale) {
       if (isNut)   cellCls += ' is-nut'; // nut visual handled differently below
 
       const role = inScale ? noteRole(noteIdx, root, scale) : null;
+      const isAnchor = anchorNote && anchorNote.stringIdx === si && anchorNote.fret === f;
+      const badge = isAnchor ? `<div class="anchor-badge">${anchorNote.direction > 0 ? '↑' : '↓'}</div>` : '';
       const dot = inScale
-        ? `<div class="ndot is-${role}">${noteName(noteIdx)}</div>`
+        ? `<div class="ndot is-${role}${isAnchor ? ' is-anchor' : ''}">${noteName(noteIdx)}${badge}</div>`
         : '';
 
       html += `<div class="${cellCls}" data-fret="${f}" style="--sw:${str.sw}px">${dot}</div>`;
@@ -1796,7 +1971,11 @@ function applyFretHighlight() {
   });
 }
 
+let fretDragInitDone = false;
+
 function initFretDrag() {
+  if (fretDragInitDone) return; // #fboard and document persist across re-renders — attach once
+  fretDragInitDone = true;
   const fboard = document.getElementById('fboard');
 
   fboard.addEventListener('mousedown', e => {
@@ -1830,11 +2009,23 @@ function initFretDrag() {
     dragInfo = null;
   });
 
-  // Click a note dot to dim/un-dim it
+  // Click a scale note to anchor a directional run there: 1st click ascends
+  // from that note, 2nd click (same note) descends, 3rd click clears it.
   fboard.addEventListener('click', e => {
     const dot = e.target.closest('.ndot');
     if (!dot) return;
-    dot.classList.toggle('user-dimmed');
+    const fret = +dot.closest('[data-fret]').dataset.fret;
+    const row = dot.closest('.str-row');
+    const stringIdx = [...fboard.querySelectorAll('.str-row')].indexOf(row);
+
+    if (anchorNote && anchorNote.stringIdx === stringIdx && anchorNote.fret === fret) {
+      anchorNote = anchorNote.direction > 0 ? { stringIdx, fret, direction: -1 } : null;
+    } else {
+      anchorNote = { stringIdx, fret, direction: 1 };
+    }
+
+    const scale = SCALES.find(s => s.name === modalScaleName);
+    if (scale) renderFretboard(modalRoot, scale);
   });
 }
 
@@ -1875,6 +2066,19 @@ document.querySelectorAll('.modal-inst-btn').forEach(b => {
     modalInstrument = b.dataset.minst;
     document.querySelectorAll('.modal-inst-btn').forEach(x => x.classList.toggle('on', x === b));
     saveSetting('instrument', modalInstrument).catch(() => {});
+    anchorNote = null; // string indices don't carry over between instruments
+    const scale = SCALES.find(s => s.name === modalScaleName);
+    if (scale) renderFretboard(modalRoot, scale);
+  });
+});
+
+// Modal view toggle (all notes vs. single lesson-book position)
+document.querySelectorAll('.modal-view-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    modalView = b.dataset.mview;
+    document.querySelectorAll('.modal-view-btn').forEach(x => x.classList.toggle('on', x === b));
+    saveSetting('scaleView', modalView).catch(() => {});
+    anchorNote = null; // an explicit view choice overrides any active anchored run
     const scale = SCALES.find(s => s.name === modalScaleName);
     if (scale) renderFretboard(modalRoot, scale);
   });
@@ -2284,6 +2488,9 @@ buildNoteGrid();
 fetchSettings().then(s => {
   if (s.instrument === 'guitar' || s.instrument === 'bass') {
     modalInstrument = s.instrument;
+  }
+  if (s.scaleView === 'position') {
+    modalView = 'position';
   }
   if (s.useFlats === '1') {
     useFlats = true;
