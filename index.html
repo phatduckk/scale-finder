@@ -94,6 +94,7 @@ body {
 }
 
 .sidebar-panel {
+  position: relative;
   width: 240px;
   background: var(--bg-page);
   border-right: 1px solid var(--border);
@@ -464,50 +465,26 @@ body {
   padding: 32px 0;
 }
 
-/* ── KEY CHIPS ── */
-.key-section { margin-bottom: 28px; }
-
+/* A real heading (sentence case, primary color) — deliberately distinct from
+   .group-label below it so "C's Scales" doesn't read as a duplicate of
+   "Diatonic Modes" stacked directly underneath it. */
 .section-title {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 10px;
 }
-
-.chips { display: flex; flex-wrap: wrap; gap: 10px; }
-
-.chip {
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 700;
-  background: var(--bg-input);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-}
-.chip { cursor: pointer; }
-.chip.top { background: var(--accent-purple-bg); color: var(--accent-purple-text); border-color: var(--accent-purple-border); }
-.chip.top:first-child { background: var(--accent-blue-bg); color: var(--accent-blue-text); border-color: var(--accent-blue-border); }
 
 /* ── SCALE GROUPS ── */
-.scale-group { margin-bottom: 28px; }
+.scale-group { margin-bottom: 22px; }
 
 .group-label {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-muted);
-  padding-bottom: 0;
-  border-bottom: none;
+  color: var(--text-primary);
   margin-bottom: 12px;
-}
-.group-divider {
-  height: 1px;
-  background: var(--border);
-  margin-bottom: 20px;
 }
 
 .scale-cards {
@@ -762,6 +739,13 @@ body {
   gap: 4px;
 }
 
+/* Chords are guitar-only — hide the instrument switcher and Pin (chords
+   aren't part of the pickedScales/"My Scales" concept) while one is shown */
+.modal.is-chord .modal-inst-group,
+.modal.is-chord .modal-pin-btn { display: none; }
+/* A real fixed voicing has no "All Notes"/"Position" — it's one exact shape */
+.modal.has-diagram .modal-view-group { display: none; }
+
 .modal-inst-btn, .modal-view-btn {
   padding: 5px 14px;
   border: 2px solid #e2e8f0;
@@ -789,6 +773,24 @@ body {
 .fboard {
   width: 100%;
 }
+
+/* Chord voicing diagram — conventional vertical orientation (nut at top,
+   strings left-to-right low E to high e), same layout guitarists actually
+   read chord shapes in. Deliberately different from the horizontal scale
+   fretboard above, which is the right call for a single fixed shape. */
+.chord-diagram { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 24px 28px; }
+.cd-marker { position: absolute; text-align: center; font-size: 13px; font-weight: 800; color: var(--text-muted); }
+.cd-marker.cd-mute { color: #ef4444; }
+.cd-marker.cd-open { color: #16a34a; }
+.cd-grid { position: relative; }
+.cd-string { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--border); }
+.cd-fretline { position: absolute; left: 0; right: 0; height: 2px; background: var(--border); }
+.cd-nut { position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--text-primary); border-radius: 1px; }
+.cd-dot { position: absolute; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; background: #e2e8f0; color: #475569; border: 2px solid #94a3b8; }
+.cd-dot.is-root  { background: var(--accent-blue-bg); color: var(--accent-blue-text); border-color: var(--accent-blue-border); }
+.cd-dot.is-third { background: var(--accent-teal-bg); color: var(--accent-teal-text); border-color: var(--accent-teal-border); }
+.cd-dot.is-fifth { background: var(--accent-purple-bg); color: var(--accent-purple-text); border-color: var(--accent-purple-border); }
+.cd-startfret { font-size: 12px; font-weight: 700; color: var(--text-muted); align-self: flex-start; margin-left: 4px; }
 
 /* Fret number header row */
 .fret-num-row {
@@ -966,7 +968,7 @@ body {
 .song-item {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 8px;
   background: transparent;
   border: none;
   border-radius: 6px;
@@ -1035,98 +1037,84 @@ body {
 .song-item:hover .song-item-delete { opacity: 1; }
 .song-item-delete:hover { color: #ff5555; }
 
-/* ── SAVE MODAL ── */
-.save-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15,23,42,0.4);
-  backdrop-filter: blur(4px);
-  z-index: 300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s;
+/* ── LIBRARY: accordion nesting, active row, trash ── */
+.song-item { position: relative; padding-left: 20px; }
+.song-item-chevron {
+  position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+  width: 10px; font-size: 9px; color: var(--text-excluded); transition: transform 0.15s;
 }
-.save-overlay.open { opacity: 1; pointer-events: all; }
+.song-item-chevron.expanded { transform: translateY(-50%) rotate(90deg); }
+/* --text-excluded is nearly invisible against the active row's light green
+   tint (both themes) — use the same green as its name text instead */
+.song-item.active-row .song-item-chevron { color: var(--accent-green-text); }
 
-.save-box {
-  background: #fff;
-  border-radius: 16px;
-  padding: 28px;
-  width: 360px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.15);
-  transform: scale(0.97);
-  transition: transform 0.15s;
+.song-item-nested { padding: 2px 6px 4px 20px; display: flex; flex-direction: column; gap: 1px; }
+.song-item-nested-row {
+  display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 5px;
+  font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer;
 }
-.save-overlay.open .save-box { transform: scale(1); }
-.save-box h3 { font-size: 18px; font-weight: 800; margin-bottom: 16px; color: #1e293b; }
-.save-input {
-  width: 100%;
-  padding: 10px 14px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1e293b;
-  outline: none;
-  transition: border-color 0.12s;
-  margin-bottom: 16px;
+.song-item-nested-row:hover { background: var(--accent-blue-bg); color: var(--accent-blue-text); }
+.song-item-nested-row .nested-swatch { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-blue-text); flex-shrink: 0; }
+.song-item-nested-row .nested-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.song-item-nested-row .nested-type {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-excluded);
 }
-.save-input:focus { border-color: #93c5fd; }
-.save-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.save-cancel {
-  padding: 8px 18px;
-  border: 2px solid #e2e8f0;
-  background: #fff;
-  color: #64748b;
-  font-family: 'Nunito', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.12s;
+.song-item-nested-row .nested-unpin { display: none; width: 15px; height: 15px; align-items: center; justify-content: center; color: var(--text-excluded); font-size: 11px; }
+.song-item-nested-row:hover .nested-unpin { display: flex; }
+.song-item-nested-row:hover .nested-type { display: none; }
+.song-item-nested-row .nested-unpin:hover { color: #ef4444; }
+
+/* Currently-loaded (or in-progress unsaved) song: just a highlighted row with Save inline */
+.song-item.active-row { background: var(--accent-green-bg); cursor: default; }
+.song-item.active-row .song-item-name { color: var(--accent-green-text); cursor: text; }
+.song-item-save {
+  height: 24px; padding: 0 9px; margin-right: 6px; font-size: 11px; font-weight: 800; flex-shrink: 0;
+  border-radius: 6px; border: none; background: var(--accent-green-text); color: var(--bg-page); cursor: pointer;
 }
-.save-confirm {
-  padding: 8px 18px;
-  border: 2px solid #3b82f6;
-  background: #3b82f6;
-  color: #fff;
-  font-family: 'Nunito', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.12s;
+.song-item-name-edit {
+  font-size: 13px; font-weight: 700; color: var(--accent-green-text); background: var(--bg-input);
+  border: 1px solid var(--accent-green-text); border-radius: 5px; padding: 0 6px; height: 22px; width: 100%;
+  font-family: inherit; outline: none;
 }
-.save-confirm:hover { background: #2563eb; border-color: #2563eb; }
-.save-warn {
-  display: none;
-  background: #fff7ed;
-  border: 2px solid #fed7aa;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #c2410c;
-  margin-bottom: 12px;
+
+.song-item-trash-btn {
+  width: 28px; height: 28px; border-radius: 5px; border: none; background: transparent;
+  color: var(--text-excluded); cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0; margin-right: 4px;
 }
-.save-overwrite {
-  padding: 8px 18px;
-  border: 2px solid #ef4444;
-  background: #ef4444;
-  color: #fff;
-  font-family: 'Nunito', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.12s;
+.song-item:hover .song-item-trash-btn { opacity: 1; }
+.song-item-trash-btn:hover { color: #ef4444; }
+
+.library-trash-title {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted); padding: 14px 10px 6px 14px;
 }
-.save-overwrite:hover { background: #dc2626; border-color: #dc2626; }
-.save-actions-conflict { display: none; gap: 8px; justify-content: flex-end; }
+.library-empty-trash-btn {
+  width: 22px; height: 22px; border-radius: 5px; border: none; background: transparent;
+  color: var(--text-excluded); cursor: pointer; font-size: 11px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0; transition: opacity 0.12s;
+}
+.library-trash-title:hover .library-empty-trash-btn { opacity: 1; }
+.library-empty-trash-btn:hover { color: #ef4444; }
+.song-item-restore {
+  height: 22px; padding: 0 8px; margin-right: 4px; font-size: 10px; font-weight: 700; flex-shrink: 0;
+  border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer;
+}
+.song-item-restore:hover { border-color: var(--accent-green-text); color: var(--accent-green-text); }
+.song-item.trashed .song-item-name { color: var(--text-excluded); }
+
+/* + menu */
+.plus-menu {
+  position: absolute; right: 0; top: 30px; z-index: 20; width: 150px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: var(--shadow-card); overflow: hidden;
+}
+.plus-menu-item {
+  display: flex; align-items: center; gap: 7px; padding: 9px 12px; font-size: 12.5px; font-weight: 600;
+  color: var(--text-secondary); cursor: pointer;
+}
+.plus-menu-item:hover { background: var(--bg-input); color: var(--text-primary); }
 
 /* ── ACCIDENTAL TOGGLE ── */
 
@@ -1146,15 +1134,39 @@ body {
 }
 .acc-btn.on { background: var(--accent-blue-bg); color: var(--accent-blue-text); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
-
-/* ── MY SCALES ── */
-.my-scales-section { margin-bottom: 28px; }
-.picked-hint {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-  padding: 4px 0;
+/* ── RESULTS TABS ── */
+/* Bleeds to the card's edges (card padding is 28px 32px) so the underline
+   reads as a full-width nav bar for the card, not a control floating inside it. */
+.results-tabs {
+  display: flex;
+  gap: 22px;
+  margin: -28px -32px 18px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
 }
+.results-tab {
+  position: relative;
+  padding: 14px 2px 11px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.results-tab:hover { color: var(--text-primary); }
+.results-tab.on { color: var(--accent-blue-text); }
+.results-tab.on::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--accent-blue-border);
+}
+
 
 /* ── ANIMATIONS ── */
 @keyframes fadeUp {
@@ -1205,26 +1217,14 @@ body {
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v8.5a2.5 2.5 0 1 1-2-2.449V5l6-2v7.5a2.5 2.5 0 1 1-2-2.449V3.333L9 3z"/></svg>
       </div>
       <span class="sidebar-title">Library</span>
-      <button class="sidebar-action-btn" id="btn-new" title="New (clear current notes)">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 13H3a1 1 0 01-1-1V2a1 1 0 011-1h6.5L13 4.5V12a1 1 0 01-1 1z"/><path d="M9 1v3.5H4.5"/><path d="M7 7.5v4M5 9.5h4"/>
-        </svg>
+      <button class="sidebar-action-btn" id="btn-plus" title="New / Import" onclick="event.stopPropagation();togglePlusMenu()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
       </button>
-      <label class="sidebar-action-btn" for="file-import" title="Import file">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M7 1v8M4 6l3 3 3-3"/><path d="M2 10v1.5A1.5 1.5 0 003.5 13h7a1.5 1.5 0 001.5-1.5V10"/>
-        </svg>
-      </label>
+      <div class="plus-menu" id="plus-menu" style="display:none">
+        <div class="plus-menu-item" id="menu-new-item">＋ New</div>
+        <label class="plus-menu-item" for="file-import">↑ Import file…</label>
+      </div>
       <input type="file" id="file-import" accept=".pdf,.txt,.tab,.pro,.chord" style="display:none">
-      <button class="sidebar-action-btn" id="btn-save" onclick="openSaveModal()" title="Save current notes">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 13H3a1 1 0 01-1-1V2a1 1 0 011-1h6.5L13 4.5V12a1 1 0 01-1 1z"/><path d="M9 1v3.5H4.5"/><path d="M4 8.5h6M4 11h4"/>
-        </svg>
-      </button>
-    </div>
-    <div class="sidebar-current" id="sidebar-current">
-      <span class="sidebar-current-label">Now editing</span>
-      <span class="sidebar-current-name" id="sidebar-current-name"></span>
     </div>
     <div class="sidebar-list" id="drawer-list">
       <div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>
@@ -1242,23 +1242,6 @@ body {
 
 <!-- Main content -->
 <div class="main-content">
-
-<!-- Save modal -->
-<div class="save-overlay" id="save-overlay">
-  <div class="save-box">
-    <h3>Save Song</h3>
-    <input class="save-input" id="save-input" type="text" placeholder="Song name…" maxlength="80">
-    <div class="save-warn" id="save-warn"></div>
-    <div class="save-actions" id="save-actions-normal">
-      <button class="save-cancel" id="save-cancel">Cancel</button>
-      <button class="save-confirm" id="save-confirm">Save</button>
-    </div>
-    <div class="save-actions save-actions-conflict" id="save-actions-conflict">
-      <button class="save-cancel" id="save-rename">Change Name</button>
-      <button class="save-overwrite" id="save-overwrite">Overwrite</button>
-    </div>
-  </div>
-</div>
 
 <div class="wrap">
 
@@ -1285,6 +1268,10 @@ body {
 
   <!-- RESULTS -->
   <div class="card">
+    <div class="results-tabs" id="results-view-tog">
+      <button class="results-tab results-view-btn on" data-view="scales" onclick="setResultsView('scales')">Scales</button>
+      <button class="results-tab results-view-btn"    data-view="chords" onclick="setResultsView('chords')">Chords</button>
+    </div>
     <div id="results-content">
       <div class="empty-msg">Pick some notes above to get started</div>
     </div>
@@ -1415,12 +1402,13 @@ let currentSong = null;         // { id, name } of the loaded song, if any
 let chordRootFreq = new Map();  // noteIdx -> how many times it appeared as chord root
 let firstChordRoot = null;      // root note of the very first chord parsed (likely the tonic)
 let appliedChords = new Map();  // noteIdx -> chord quality applied via popover
-let instrument = 'guitar';
-let modalInstrument = 'guitar';
+let instrument = 'guitar'; // drives the scale modal's default fretboard strings
+let resultsView = 'scales'; // 'scales' | 'chords' — which results section is showing
 let modalView = 'all'; // 'all' | 'position'
 let anchorNote = null; // { stringIdx, fret, direction: 1 | -1 } — click-to-anchor run, overrides modalView when set
 let modalRoot = 0;
 let modalScaleName = '';
+let modalChordQuality = null; // set instead of modalScaleName when the modal is showing a chord
 let useFlats = false;
 
 function noteName(idx) {
@@ -1440,7 +1428,7 @@ function setAccidental(flats) {
   analyze();
   const overlay = document.getElementById('modal-overlay');
   if (overlay.classList.contains('open')) {
-    const scale = SCALES.find(s => s.name === modalScaleName);
+    const scale = getModalScaleData();
     if (!scale) return;
     document.getElementById('modal-root').textContent = noteName(modalRoot);
     const scaleNotes = scale.iv.map(iv => (modalRoot + iv) % 12);
@@ -1542,6 +1530,7 @@ function refreshButtons() {
       chip.classList.toggle('active', chip.dataset.q === applied);
     });
   });
+  renderLibrary(); // note selection changed — keep the library's active-row in sync
 }
 
 // ── INSTRUMENT TOGGLE ─────────────────────────────────────────────────────────
@@ -1549,50 +1538,47 @@ function refreshButtons() {
 function togglePick(root, scaleName) {
   const key = `${root}:${scaleName}`;
   pickedScales.has(key) ? pickedScales.delete(key) : pickedScales.add(key);
-  if (currentSong) updateSong(currentSong.id, { scales: [...pickedScales] }).catch(() => {});
+  // A pin is only worth showing if its row's accordion is actually open —
+  // force it open so the pin is never invisible after the click that made it.
+  if (pickedScales.size > 0) expandedSongs.add(currentSong ? currentSong.id : 'draft');
+  if (currentSong) {
+    updateSong(currentSong.id, { scales: [...pickedScales] }).catch(() => {});
+    // optimistic local update so the row's pinned-count and Save-button
+    // visibility reflect immediately, without waiting on a re-fetch round trip
+    const cached = librarySongs.find(s => s.id === currentSong.id);
+    if (cached) cached.scales = [...pickedScales];
+    savedSnapshot = snapshotKey();
+  }
+  renderLibrary();
   analyze();
 }
 
 function clearCurrentSong() {
-  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; updateCurrentSongDisplay(); refreshButtons(); analyze();
-  document.querySelectorAll('.song-item.active').forEach(el => el.classList.remove('active'));
+  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; pendingSongName = 'Untitled'; draftNameTyped = false; draftStarted = false; savedSnapshot = null; expandedSongs.clear();
+  refreshButtons(); analyze(); renderLibrary();
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
 
+// "+ New": a clear plus an explicit signal of intent — unlike the plain Clear
+// button, this shows the draft row (and its rename field) right away, before
+// any notes are picked, so it reads as "starting a new song" rather than
+// just wiping the note picker.
+function startNewSong() {
+  clearCurrentSong();
+  draftStarted = true;
+  renderLibrary();
+  const nameEl = document.querySelector('#drawer-list .song-item.active-row .song-item-name');
+  if (nameEl) startRenameActiveRow(nameEl, null);
+}
+
 document.getElementById('btn-clear').addEventListener('click', clearCurrentSong);
-document.getElementById('btn-new').addEventListener('click', clearCurrentSong);
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
-
-function buildMyScales(input = [], matches = []) {
-  if (pickedScales.size === 0) {
-    return `<div class="my-scales-section"><div class="picked-hint">Hit + on any scale card to pin your picks here</div></div>`;
-  }
-  let cards = '';
-  for (const key of pickedScales) {
-    const sep = key.indexOf(':');
-    const root = +key.slice(0, sep);
-    const scaleName = key.slice(sep + 1);
-    let m = matches.find(x => x.root === root && x.scale.name === scaleName);
-    if (!m) {
-      const scale = SCALES.find(s => s.name === scaleName);
-      if (!scale) continue;
-      const scaleSet = scale.iv.map(iv => (root + iv) % 12);
-      const matched = input.filter(n => scaleSet.includes(n)).length;
-      m = { root, scale, scaleSet, coverage: matched / scale.iv.length, matched };
-    }
-    cards += buildCard(m, input, 0);
-  }
-  return `<div class="my-scales-section">
-    <div class="section-title" style="margin-bottom:10px">My Scales</div>
-    <div class="scale-cards">${cards}</div>
-  </div>`;
-}
 
 function analyze() {
   const content = document.getElementById('results-content');
   if (sel.size === 0) {
-    content.innerHTML = buildMyScales([]) + '<div class="empty-msg">Pick some notes above to get started</div>';
+    content.innerHTML = '<div class="empty-msg">Pick some notes above to get started</div>';
     return;
   }
 
@@ -1633,7 +1619,9 @@ function analyze() {
   });
 
   if (matches.length === 0) {
-    content.innerHTML = '<div class="empty-msg">No standard scales match these notes</div>';
+    content.innerHTML = resultsView === 'chords'
+      ? '<div class="empty-msg">Select a single note to see its chords</div>'
+      : '<div class="empty-msg">No standard scales match these notes</div>';
     return;
   }
 
@@ -1641,42 +1629,32 @@ function analyze() {
   // it's "show me this note's own scales first, then the relative keys that
   // merely happen to contain it" (e.g. C's own scales before A minor pentatonic).
   const singleNote = input.length === 1;
-  const orderedMatches = singleNote
-    ? [...matches.filter(m => m.root === input[0]), ...matches.filter(m => m.root !== input[0])]
-    : matches;
 
-  const topKeys = [];
-  const seenKeys = new Set();
-  for (const m of orderedMatches) {
-    const k = `${m.root}:${m.scale.name}`;
-    if (!seenKeys.has(k)) { seenKeys.add(k); topKeys.push(m); }
-    if (topKeys.length >= 8) break;
-  }
+  let html = '';
 
-  // 1. Suggested Keys
-  let html = `<div class="key-section"><div class="section-title" style="margin-bottom:10px">Suggested Keys</div><div class="chips">`;
-  topKeys.forEach((m, i) => {
-    const cls = 'chip' + (i < 3 ? ' top' : '');
-    const alias = m.scale.alias ? ` <span style="opacity:.55;font-weight:600;font-size:10px;">(${m.scale.alias})</span>` : '';
-    html += `<div class="${cls}" onclick="openScaleModal(${m.root},'${m.scale.name}')" style="cursor:pointer">${noteName(m.root)} ${m.scale.name}${alias}</div>`;
-  });
-  html += '</div></div>';
-
-  // 2. My Scales (full cards)
-  html += buildMyScales(input, matches);
-
-  // 3. Scale groups by type
-  if (singleNote) {
-    const rooted   = matches.filter(m => m.root === input[0]);
-    const relative = matches.filter(m => m.root !== input[0]);
-    html += `<div class="section-title" style="margin:18px 0 4px">${noteName(input[0])}'s Scales</div>`;
-    html += renderScaleGroups(rooted, input);
-    if (relative.length) {
-      html += `<div class="section-title" style="margin:18px 0 4px">Relative Keys <span style="opacity:.55;font-weight:600;font-size:11px;">(also contain ${noteName(input[0])})</span></div>`;
-      html += renderScaleGroups(relative, input);
+  if (resultsView === 'chords') {
+    // Chord reference is only meaningful with exactly one note selected —
+    // guitar-only content by nature, independent of the modal's instrument setting.
+    if (singleNote) {
+      html += `<div class="scale-cards">`;
+      CHORD_DISPLAY_ORDER.forEach(q => { html += buildChordCard(input[0], q); });
+      html += `</div>`;
+    } else {
+      html += `<div class="empty-msg">Select a single note to see its chords</div>`;
     }
   } else {
-    html += renderScaleGroups(matches, input);
+    // Scale groups by type
+    if (singleNote) {
+      const rooted   = matches.filter(m => m.root === input[0]);
+      const relative = matches.filter(m => m.root !== input[0]);
+      html += renderScaleGroups(rooted, input);
+      if (relative.length) {
+        html += `<div class="section-title" style="margin-top:26px">Relative Keys <span style="opacity:.55;font-weight:600;font-size:11px;">(also contain ${noteName(input[0])})</span></div>`;
+        html += renderScaleGroups(relative, input);
+      }
+    } else {
+      html += renderScaleGroups(matches, input);
+    }
   }
 
   content.innerHTML = html;
@@ -1695,7 +1673,7 @@ function renderScaleGroups(matchList, input) {
   for (const type of GROUP_ORDER) {
     const group = byType[type];
     if (!group || group.length === 0) continue;
-    html += `<div class="scale-group"><div class="group-label">${GROUP_LABELS[type]}</div><div class="group-divider"></div><div class="scale-cards">`;
+    html += `<div class="scale-group"><div class="group-label">${GROUP_LABELS[type]}</div><div class="scale-cards">`;
     group.forEach((m, idx) => { html += buildCard(m, input, idx); });
     html += `</div></div>`;
   }
@@ -1758,16 +1736,41 @@ function noteRole(noteIdx, root, scale) {
   return 'scale';
 }
 
+// A chord quality is structurally the same shape as a scale (root + interval
+// list), so it can be pushed through the exact same modal/fretboard pipeline —
+// position boxes, click-to-anchor runs, root/third/fifth coloring — without a
+// parallel implementation. This returns whichever one is currently loaded.
+function getModalScaleData() {
+  if (modalChordQuality) {
+    return { name: CHORD_LABELS[modalChordQuality] || modalChordQuality, iv: CHORD_INTERVALS[modalChordQuality] };
+  }
+  return SCALES.find(s => s.name === modalScaleName);
+}
+
 function openScaleModal(root, scaleName) {
   const scale = SCALES.find(s => s.name === scaleName);
   if (!scale) return;
-
   modalRoot = root;
   modalScaleName = scaleName;
-
-  document.getElementById('modal-root').textContent = noteName(root);
-  document.getElementById('modal-scale-name').textContent = scaleName;
+  modalChordQuality = null;
+  document.getElementById('modal').classList.remove('is-chord');
   document.getElementById('modal-alias').textContent = scale.alias ? `/ ${scale.alias}` : '';
+  showModal(root, scale);
+}
+
+function openChordModal(root, quality) {
+  if (!CHORD_INTERVALS[quality]) return;
+  modalRoot = root;
+  modalScaleName = '';
+  modalChordQuality = quality;
+  document.getElementById('modal').classList.add('is-chord');
+  document.getElementById('modal-alias').textContent = '';
+  showModal(root, getModalScaleData());
+}
+
+function showModal(root, scale) {
+  document.getElementById('modal-root').textContent = noteName(root);
+  document.getElementById('modal-scale-name').textContent = scale.name;
 
   // Note pills with triad colors
   const scaleNotes = scale.iv.map(iv => (root + iv) % 12);
@@ -1782,7 +1785,7 @@ function openScaleModal(root, scaleName) {
   document.getElementById('modal-notes-row').innerHTML = notePills;
 
   document.querySelectorAll('.modal-inst-btn').forEach(b => {
-    b.classList.toggle('on', b.dataset.minst === modalInstrument);
+    b.classList.toggle('on', b.dataset.minst === instrument);
   });
   document.querySelectorAll('.modal-view-btn').forEach(b => {
     b.classList.toggle('on', b.dataset.mview === modalView);
@@ -1790,7 +1793,17 @@ function openScaleModal(root, scaleName) {
 
   litFrets = new Set();
   anchorNote = null;
-  renderFretboard(root, scale);
+
+  // A verified real voicing takes priority over the derived fretboard-position
+  // view — "All Notes"/"Position" don't mean anything for one fixed shape.
+  const voicing = modalChordQuality ? getChordVoicing(root, modalChordQuality) : null;
+  document.getElementById('modal').classList.toggle('has-diagram', !!voicing);
+  if (voicing) {
+    document.getElementById('fboard').innerHTML = renderChordDiagram(root, modalChordQuality, voicing);
+  } else {
+    renderFretboard(root, scale);
+  }
+
   syncModalPin();
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1812,6 +1825,7 @@ function computeScalePositionNotes(strings, scale, root) {
   const n = seq.length;
   const orderedStrings = [...strings].reverse(); // low string first
   const MAX_STRING_SPAN = 3; // widest comfortable single-string stretch in one hand position
+  const MAX_TOTAL_SPAN = 5;  // widest comfortable span across the whole shape, any strings
 
   const findFret = (str, pitch, minFret) => {
     for (let f = minFret; f <= NUM_FRETS; f++) {
@@ -1833,6 +1847,7 @@ function computeScalePositionNotes(strings, scale, root) {
   let stringIdx = 0;
   let firstFretOnString = anchorFret;
   let lastFret = anchorFret;
+  let spanMin = anchorFret, spanMax = anchorFret;
   place(0, anchorFret);
 
   // Pentatonic/blues-sized scales (<=6 notes) are conventionally shown as a fixed
@@ -1847,21 +1862,28 @@ function computeScalePositionNotes(strings, scale, root) {
     let str = orderedStrings[stringIdx];
     let fret = findFret(str, pitch, lastFret + 1);
     if (fret !== null && fret - firstFretOnString > MAX_STRING_SPAN) fret = null;
+    if (fret !== null && Math.max(spanMax, fret) - Math.min(spanMin, fret) > MAX_TOTAL_SPAN) fret = null;
 
     if (fret === null) {
       if (stringIdx + 1 >= orderedStrings.length) break; // out of strings — position is complete
-      stringIdx++;
-      str = orderedStrings[stringIdx];
+      const nextIdx = stringIdx + 1;
+      const nextStr = orderedStrings[nextIdx];
       // Allow fret 0 here (unlike the anchor string): if this string's open note
       // happens to be the note we need, the alternative is jumping a full octave
       // up to the next occurrence, which is far worse than one incidental open note.
-      fret = findFret(str, pitch, Math.max(0, lastFret - 6));
-      if (fret === null) break;
+      let nextFret = findFret(nextStr, pitch, Math.max(0, lastFret - 6));
+      if (nextFret !== null && Math.max(spanMax, nextFret) - Math.min(spanMin, nextFret) > MAX_TOTAL_SPAN) nextFret = null;
+      if (nextFret === null) break; // no way to keep going without leaving the hand position
+      stringIdx = nextIdx;
+      str = nextStr;
+      fret = nextFret;
       firstFretOnString = fret;
     }
 
     place(stringIdx, fret);
     lastFret = fret;
+    spanMin = Math.min(spanMin, fret);
+    spanMax = Math.max(spanMax, fret);
     if (stopAtOctave && pitch === root) break; // reached the octave — one octave is the whole shape
   }
 
@@ -1878,6 +1900,7 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
   const n = seq.length;
   const orderedStrings = [...strings].reverse(); // low string first
   const MAX_STRING_SPAN = 3;
+  const MAX_TOTAL_SPAN = 5;
 
   const startPitch = (strings[anchorStringIdx].open + anchorFret) % 12;
   const startDegree = seq.indexOf(startPitch);
@@ -1898,6 +1921,7 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
   let orderedIdx = strings.length - 1 - anchorStringIdx;
   let firstFretOnString = anchorFret;
   let lastFret = anchorFret;
+  let spanMin = anchorFret, spanMax = anchorFret;
   place(orderedIdx, anchorFret);
 
   const stopAtOctave = n >= 7;
@@ -1908,29 +1932,90 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
     let str = orderedStrings[orderedIdx];
     let fret = findFret(str, pitch, lastFret + direction);
     if (fret !== null && Math.abs(fret - firstFretOnString) > MAX_STRING_SPAN) fret = null;
+    if (fret !== null && Math.max(spanMax, fret) - Math.min(spanMin, fret) > MAX_TOTAL_SPAN) fret = null;
 
     if (fret === null) {
       const nextIdx = orderedIdx + direction;
       if (nextIdx < 0 || nextIdx >= orderedStrings.length) break; // out of strings — position is complete
-      orderedIdx = nextIdx;
-      str = orderedStrings[orderedIdx];
+      const nextStr = orderedStrings[nextIdx];
       const searchFrom = direction > 0 ? Math.max(0, lastFret - 6) : Math.min(NUM_FRETS, lastFret + 6);
-      fret = findFret(str, pitch, searchFrom);
-      if (fret === null) break;
+      let nextFret = findFret(nextStr, pitch, searchFrom);
+      if (nextFret !== null && Math.max(spanMax, nextFret) - Math.min(spanMin, nextFret) > MAX_TOTAL_SPAN) nextFret = null;
+      if (nextFret === null) break; // no way to keep going without leaving the hand position
+      orderedIdx = nextIdx;
+      str = nextStr;
+      fret = nextFret;
       firstFretOnString = fret;
     }
 
     place(orderedIdx, fret);
     lastFret = fret;
+    spanMin = Math.min(spanMin, fret);
+    spanMax = Math.max(spanMax, fret);
     if (stopAtOctave && pitch === startPitch) break; // back to the same note an octave away
   }
 
   return placements;
 }
 
+// Renders a single fixed chord voicing in the conventional vertical chord-box
+// layout (nut at top, strings left-to-right low E to high e) — the way
+// guitarists actually read a named shape, as opposed to the horizontal
+// full-neck view used for scale positions.
+function renderChordDiagram(root, quality, voicing) {
+  const { frets } = voicing;
+  const STRING_GAP = 56, ROW_HEIGHT = 56, DOT = 42; // matches the scale fretboard's .ndot size
+  const openNotes = [4, 9, 2, 7, 11, 4]; // low E, A, D, G, B, high e
+  const pseudoScale = { iv: CHORD_INTERVALS[quality] };
+
+  const playedFrets = frets.filter(f => f !== 'x' && f > 0);
+  const hasOpen = frets.some(f => f === 0);
+  const maxFret = playedFrets.length ? Math.max(...playedFrets) : 0;
+  const minFret = playedFrets.length ? Math.min(...playedFrets) : 0;
+  const windowStart = hasOpen ? 0 : minFret;
+  // topFret is the fret the very top grid line represents as a boundary — the
+  // nut itself for an open-position shape, or one fret below the lowest
+  // fretted note when the whole shape sits higher up the neck (in which case
+  // a "Nfr" label marks where that boundary actually falls on the real neck).
+  const topFret = hasOpen ? 0 : windowStart - 1;
+  const numRows = Math.max(4, maxFret - topFret);
+  const showFretLabel = windowStart > 0;
+  const gridWidth = STRING_GAP * 5;
+  const gridHeight = ROW_HEIGHT * numRows;
+
+  let markers = `<div class="cd-markers" style="position:relative;width:${gridWidth}px;height:22px">`;
+  frets.forEach((f, s) => {
+    const cls = f === 'x' ? 'cd-mute' : f === 0 ? 'cd-open' : '';
+    const label = f === 'x' ? '✕' : f === 0 ? '○' : '';
+    markers += `<div class="cd-marker ${cls}" style="left:${s * STRING_GAP - STRING_GAP / 2}px;width:${STRING_GAP}px">${label}</div>`;
+  });
+  markers += '</div>';
+
+  let grid = `<div class="cd-grid" style="width:${gridWidth}px;height:${gridHeight}px">`;
+  if (!showFretLabel) grid += `<div class="cd-nut" style="width:${gridWidth}px"></div>`;
+  for (let s = 0; s < 6; s++) {
+    grid += `<div class="cd-string" style="left:${s * STRING_GAP}px;height:${gridHeight}px"></div>`;
+  }
+  for (let r = 0; r <= numRows; r++) {
+    grid += `<div class="cd-fretline" style="top:${r * ROW_HEIGHT}px;width:${gridWidth}px"></div>`;
+  }
+  frets.forEach((f, s) => {
+    if (f === 'x' || f === 0) return;
+    const top = (f - topFret - 0.5) * ROW_HEIGHT - DOT / 2;
+    const left = s * STRING_GAP - DOT / 2;
+    const pitch = (openNotes[s] + f) % 12;
+    const role = noteRole(pitch, root, pseudoScale);
+    grid += `<div class="cd-dot is-${role}" style="top:${top}px;left:${left}px;width:${DOT}px;height:${DOT}px">${noteName(pitch)}</div>`;
+  });
+  grid += '</div>';
+
+  const fretLabel = showFretLabel ? `<div class="cd-startfret">${windowStart}fr</div>` : '';
+  return `<div class="chord-diagram">${markers}${grid}${fretLabel}</div>`;
+}
+
 function renderFretboard(root, scale) {
   const scaleNotes = new Set(scale.iv.map(iv => (root + iv) % 12));
-  const strings = modalInstrument === 'bass' ? BASS_STRINGS : GUITAR_STRINGS;
+  const strings = instrument === 'bass' ? BASS_STRINGS : GUITAR_STRINGS;
   let positionNotes = anchorNote
     ? computeAnchoredPositionNotes(strings, scale, root, anchorNote.stringIdx, anchorNote.fret, anchorNote.direction)
     : modalView === 'position' ? computeScalePositionNotes(strings, scale, root) : null;
@@ -2059,7 +2144,7 @@ function initFretDrag() {
       anchorNote = { stringIdx, fret, direction: 1 };
     }
 
-    const scale = SCALES.find(s => s.name === modalScaleName);
+    const scale = getModalScaleData();
     if (scale) renderFretboard(modalRoot, scale);
   });
 }
@@ -2092,17 +2177,37 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
 
-// Modal instrument toggle
+// Instrument now only controls the scale modal's fretboard (which strings to
+// show) — it no longer gates anything on the results page, since that's what
+// the Scales/Chords tabs are for.
+function setInstrument(inst) {
+  if (inst !== 'guitar' && inst !== 'bass') return;
+  instrument = inst;
+  syncInstrumentButtons();
+  saveSetting('instrument', instrument).catch(() => {});
+  anchorNote = null; // string indices don't carry over between instruments
+  const scale = getModalScaleData();
+  if (scale && document.getElementById('modal-overlay').classList.contains('open')) {
+    renderFretboard(modalRoot, scale);
+  }
+}
+
+function syncInstrumentButtons() {
+  document.querySelectorAll('.modal-inst-btn').forEach(b => b.classList.toggle('on', b.dataset.minst === instrument));
+}
+
 document.querySelectorAll('.modal-inst-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    modalInstrument = b.dataset.minst;
-    document.querySelectorAll('.modal-inst-btn').forEach(x => x.classList.toggle('on', x === b));
-    saveSetting('instrument', modalInstrument).catch(() => {});
-    anchorNote = null; // string indices don't carry over between instruments
-    const scale = SCALES.find(s => s.name === modalScaleName);
-    if (scale) renderFretboard(modalRoot, scale);
-  });
+  b.addEventListener('click', () => setInstrument(b.dataset.minst));
 });
+
+// Scales/Chords tab — which section of the results renders.
+function setResultsView(view) {
+  if (view !== 'scales' && view !== 'chords') return;
+  resultsView = view;
+  document.querySelectorAll('.results-view-btn').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+  saveSetting('resultsView', resultsView).catch(() => {});
+  analyze();
+}
 
 // Modal view toggle (all notes vs. single lesson-book position)
 document.querySelectorAll('.modal-view-btn').forEach(b => {
@@ -2111,7 +2216,7 @@ document.querySelectorAll('.modal-view-btn').forEach(b => {
     document.querySelectorAll('.modal-view-btn').forEach(x => x.classList.toggle('on', x === b));
     saveSetting('scaleView', modalView).catch(() => {});
     anchorNote = null; // an explicit view choice overrides any active anchored run
-    const scale = SCALES.find(s => s.name === modalScaleName);
+    const scale = getModalScaleData();
     if (scale) renderFretboard(modalRoot, scale);
   });
 });
@@ -2127,6 +2232,40 @@ const NOTE_TO_IDX = {
 const TAB_STRINGS = {
   'E':4, 'A':9, 'D':2, 'G':7, 'B':11, 'e':4
 };
+
+// Curated display order for the "<Note>'s Chords" reference section — most
+// commonly used qualities first.
+const CHORD_DISPLAY_ORDER = ['maj','m','7','maj7','m7','dim','aug','sus2','sus4','add9','m9','dim7','m7b5','mM7','madd9','9','5'];
+
+function chordIntervalRole(iv) {
+  const semis = iv % 12;
+  if (semis === 0) return 'root';
+  if (semis === 3 || semis === 4) return 'third';
+  if (semis === 6 || semis === 7 || semis === 8) return 'fifth';
+  return 'scale'; // 2nd/7th/9th — no dedicated accent color, shown neutral
+}
+
+function buildChordCard(root, quality) {
+  const ivs = CHORD_INTERVALS[quality];
+  if (!ivs) return '';
+  const rootName = noteName(root);
+  const suffix = quality === 'maj' ? '' : quality;
+  let pills = '';
+  for (const iv of ivs) {
+    const ni = (root + iv) % 12;
+    const role = chordIntervalRole(iv);
+    const cls = role === 'scale' ? 'snote scale' : `snote triad-${role}`;
+    pills += `<div class="${cls}">${noteName(ni)}</div>`;
+  }
+  return `
+  <div class="scale-card" onclick="openChordModal(${root}, '${quality}')">
+    <div class="scale-card-hdr">
+      <span class="scale-root">${rootName}${suffix}</span>
+      <span class="scale-count">${ivs.length} notes</span>
+    </div>
+    <div class="note-row">${pills}</div>
+  </div>`;
+}
 
 const CHORD_INTERVALS = {
   'maj':   [0,4,7],
@@ -2147,6 +2286,95 @@ const CHORD_INTERVALS = {
   '9':     [0,4,7,10,14],
   'm9':    [0,3,7,10,14],
 };
+
+const CHORD_LABELS = {
+  'maj': 'Major', 'm': 'Minor', '5': 'Power Chord', 'dim': 'Diminished', 'aug': 'Augmented',
+  '7': 'Dominant 7th', 'maj7': 'Major 7th', 'm7': 'Minor 7th', 'mM7': 'Minor-Major 7th',
+  'm7b5': 'Half-Diminished (m7♭5)', 'dim7': 'Diminished 7th', 'sus2': 'Sus2', 'sus4': 'Sus4',
+  'add9': 'Add9', 'madd9': 'Minor Add9', '9': 'Dominant 9th', 'm9': 'Minor 9th',
+};
+
+// ── REAL CHORD VOICINGS ──────────────────────────────────────────────────────
+//
+// Fret-per-string shapes (low E to high e; 'x' = muted, 0 = open), for the
+// qualities where a single well-known guitar shape exists. Every shape below
+// was checked against CHORD_INTERVALS by computing each string's actual
+// sounding pitch class — not eyeballed from a chart — so they're guaranteed
+// to contain exactly the right notes.
+//
+// E_SHAPE / A_SHAPE are the classic movable "barre" templates (root on the
+// low E string / A string respectively, at fret 0 = open position). For any
+// other root the same finger pattern just slides up by however many frets
+// that root sits above E (or above A) — whichever is the lower position.
+const E_SHAPE = {
+  maj:   [0,2,2,1,0,0],
+  m:     [0,2,2,0,0,0],
+  '7':   [0,2,0,1,0,0],
+  maj7:  [0,2,1,1,0,0],
+  m7:    [0,2,0,0,0,0],
+  sus4:  [0,2,2,2,0,0],
+  sus2:  [0,2,4,4,0,0],
+  '5':   [0,2,2,'x','x','x'],
+  dim:   [0,1,2,0,'x',0],
+  aug:   [0,3,2,1,1,0],
+  dim7:  [0,1,2,0,2,0],
+  m7b5:  [0,1,0,0,3,0],
+  mM7:   [0,2,1,0,0,0],
+  add9:  [0,2,4,1,0,0],
+  madd9: [0,2,4,0,0,0],
+  '6':   [0,2,2,1,2,0],
+  m6:    [0,2,2,0,2,0],
+  '9':   [0,2,0,1,3,2],
+  m9:    [0,2,0,0,3,2],
+};
+const A_SHAPE = {
+  maj:   ['x',0,2,2,2,0],
+  m:     ['x',0,2,2,1,0],
+  '7':   ['x',0,2,0,2,0],
+  maj7:  ['x',0,2,1,2,0],
+  m7:    ['x',0,2,0,1,0],
+  sus4:  ['x',0,2,2,3,0],
+  sus2:  ['x',0,2,2,0,0],
+  '5':   ['x',0,2,'x','x','x'],
+  dim:   ['x',0,1,2,1,'x'],
+  aug:   ['x',0,3,2,2,1],
+  dim7:  ['x',0,1,2,1,2],
+  m7b5:  ['x',0,1,0,1,3],
+  mM7:   ['x',0,2,1,1,0],
+  add9:  ['x',0,2,4,2,0],
+  madd9: ['x',0,2,4,1,0],
+  '6':   ['x',0,2,2,2,2],
+  m6:    ['x',0,2,2,1,2],
+  '9':   ['x',4,2,0,0,5],
+  m9:    ['x',3,2,0,0,5],
+};
+// A few classic open-position shapes that are more idiomatic than the movable
+// templates above for these specific roots — every guitarist's first chords.
+const OPEN_CHORD_SHAPES = {
+  4:  { maj:[0,2,2,1,0,0], m:[0,2,2,0,0,0], '7':[0,2,0,1,0,0], maj7:[0,2,1,1,0,0], m7:[0,2,0,0,0,0], sus4:[0,2,2,2,0,0] }, // E
+  9:  { maj:['x',0,2,2,2,0], m:['x',0,2,2,1,0], '7':['x',0,2,0,2,0], maj7:['x',0,2,1,2,0], m7:['x',0,2,0,1,0], sus4:['x',0,2,2,3,0], sus2:['x',0,2,2,0,0] }, // A
+  2:  { maj:['x','x',0,2,3,2], m:['x','x',0,2,3,1], '7':['x','x',0,2,1,2], maj7:['x','x',0,2,2,2], m7:['x','x',0,2,1,1], sus4:['x','x',0,2,3,3] }, // D
+  7:  { maj:[3,2,0,0,0,3], '7':[3,2,0,0,0,1], maj7:[3,2,0,0,0,2] }, // G
+  0:  { maj:['x',3,2,0,1,0], '7':['x',3,2,3,1,0], maj7:['x',3,2,0,0,0] }, // C
+  11: { '7':['x',2,1,2,0,2] }, // B
+};
+
+// Returns { frets, startFret } for a root+quality we have a verified shape
+// for, or null if this quality isn't one of them (caller should fall back to
+// the derived fretboard-position view instead of guessing).
+function getChordVoicing(root, quality) {
+  const openShape = OPEN_CHORD_SHAPES[root] && OPEN_CHORD_SHAPES[root][quality];
+  if (openShape) return { frets: openShape, startFret: 0 };
+
+  if (!E_SHAPE[quality]) return null;
+  const rootFretE = (root - 4 + 12) % 12;
+  const rootFretA = (root - 9 + 12) % 12;
+  const useE = rootFretE <= rootFretA;
+  const rootFret = useE ? rootFretE : rootFretA;
+  const template = useE ? E_SHAPE[quality] : A_SHAPE[quality];
+  const frets = template.map(v => v === 'x' ? 'x' : v + rootFret);
+  return { frets, startFret: rootFret };
+}
 
 function chordToNotes(token) {
   // Strict: uppercase root only, must consume full token (no trailing junk like "Chords")
@@ -2269,23 +2497,38 @@ const API = 'http://localhost:3001/api';
 function lsGetSongs() {
   return JSON.parse(localStorage.getItem('sf_songs') || '[]');
 }
+function lsSetSongs(songs) {
+  localStorage.setItem('sf_songs', JSON.stringify(songs));
+}
 function lsGetSettings() {
   return JSON.parse(localStorage.getItem('sf_settings') || '{}');
 }
+// Mirrors the server's uniqueName() — appends " 2", " 3", etc. until the name
+// isn't taken by any song (trashed or not, matching the DB's UNIQUE constraint).
+function lsUniqueName(base, excludeId) {
+  const all = lsGetSongs();
+  let name = base, n = 2;
+  while (all.some(s => s.name === name && s.id !== excludeId)) { name = `${base} ${n}`; n++; }
+  return name;
+}
 
 async function fetchSongs() {
-  if (!IS_SERVED) return lsGetSongs();
+  if (!IS_SERVED) return lsGetSongs().filter(s => !s.trashed_at);
   const res = await fetch(`${API}/songs`);
+  return res.json();
+}
+
+async function fetchTrash() {
+  if (!IS_SERVED) return lsGetSongs().filter(s => s.trashed_at);
+  const res = await fetch(`${API}/songs/trash`);
   return res.json();
 }
 
 async function saveSong(name, notes, scales) {
   if (!IS_SERVED) {
     const songs = lsGetSongs();
-    if (songs.some(s => s.name.toLowerCase() === name.toLowerCase()))
-      throw Object.assign(new Error('duplicate'), { code: 'duplicate' });
-    const song = { id: Date.now(), name, notes, scales, created_at: new Date().toISOString() };
-    localStorage.setItem('sf_songs', JSON.stringify([song, ...songs]));
+    const song = { id: Date.now(), name: lsUniqueName(name), notes, scales, created_at: new Date().toISOString(), trashed_at: null };
+    lsSetSongs([song, ...songs]);
     return song;
   }
   const res = await fetch(`${API}/songs`, {
@@ -2293,14 +2536,13 @@ async function saveSong(name, notes, scales) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, notes, scales }),
   });
-  if (res.status === 409) throw Object.assign(new Error('duplicate'), { code: 'duplicate' });
   if (!res.ok) throw new Error('save failed');
   return res.json();
 }
 
 async function deleteSong(id) {
   if (!IS_SERVED) {
-    localStorage.setItem('sf_songs', JSON.stringify(lsGetSongs().filter(s => s.id !== id)));
+    lsSetSongs(lsGetSongs().filter(s => s.id !== id));
     return;
   }
   await fetch(`${API}/songs/${id}`, { method: 'DELETE' });
@@ -2310,14 +2552,39 @@ async function updateSong(id, patch) {
   if (!IS_SERVED) {
     const songs = lsGetSongs();
     const i = songs.findIndex(s => s.id === id);
-    if (i !== -1) { Object.assign(songs[i], patch); localStorage.setItem('sf_songs', JSON.stringify(songs)); }
+    if (i !== -1) {
+      if (patch.name !== undefined) patch = { ...patch, name: lsUniqueName(patch.name, id) };
+      Object.assign(songs[i], patch);
+      lsSetSongs(songs);
+    }
     return;
   }
-  await fetch(`${API}/songs/${id}`, {
+  const res = await fetch(`${API}/songs/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
   });
+  return res.json();
+}
+
+async function trashSong(id) {
+  if (!IS_SERVED) {
+    const songs = lsGetSongs();
+    const s = songs.find(s => s.id === id);
+    if (s) { s.trashed_at = new Date().toISOString(); lsSetSongs(songs); }
+    return;
+  }
+  await fetch(`${API}/songs/${id}/trash`, { method: 'PUT' });
+}
+
+async function restoreSong(id) {
+  if (!IS_SERVED) {
+    const songs = lsGetSongs();
+    const s = songs.find(s => s.id === id);
+    if (s) { s.trashed_at = null; s.name = lsUniqueName(s.name, id); lsSetSongs(songs); }
+    return;
+  }
+  await fetch(`${API}/songs/${id}/restore`, { method: 'PUT' });
 }
 
 async function fetchSettings() {
@@ -2340,76 +2607,214 @@ async function saveSetting(key, value) {
   });
 }
 
-// ── DRAWER ────────────────────────────────────────────────────────────────────
+// ── LIBRARY ───────────────────────────────────────────────────────────────────
+//
+// The currently-loaded (or in-progress unsaved) song is just a highlighted row
+// in this same list, with Save inline — not a separate strip duplicating it.
+// Its presence is derived from state (currentSong, or sel.size>0 with no
+// currentSong) rather than toggled by a specific button, so it always reflects
+// reality. Songs with pinned scales get a chevron to expand nested chips;
+// clicking one opens that scale directly. Deleting moves a song to a Trash
+// section (no confirmation dialog) instead of destroying it immediately.
 
-let drawerSongs = [];
+let librarySongs = [];      // cached non-trashed songs
+let libraryTrash = [];      // cached trashed songs
+let expandedSongs = new Set();
+let pendingSongName = 'Untitled'; // working title for an unsaved (no currentSong) draft
+let draftNameTyped = false; // true once the user has actually typed a draft name — Save refuses to persist the untouched "Untitled" placeholder
+let draftStarted = false; // true after "+New" — shows the draft row (and its rename field) before any notes are picked, so New reads as "start a song" not just "clear notes"
 
 function openDrawer() {
   document.getElementById('sidebar-panel').classList.remove('collapsed');
-  return loadDrawer();
+  return refreshLibrary();
 }
-
-function closeDrawer() { /* no-op */ }
 
 function toggleDrawer() {
   const panel = document.getElementById('sidebar-panel');
   const isOpen = !panel.classList.contains('collapsed');
   panel.classList.toggle('collapsed', isOpen);
-  if (!isOpen) loadDrawer();
+  if (!isOpen) refreshLibrary();
 }
 
-async function loadDrawer() {
+async function refreshLibrary() {
+  librarySongs = await fetchSongs();
+  libraryTrash = await fetchTrash();
+  renderLibrary();
+}
+
+function parseSongFields(song) {
+  const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
+  const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
+  return { notes, scales };
+}
+
+function timeSince(iso) {
+  const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+// Renders pinned-scale chips for a row. unpinFn is the exact onclick body to
+// unpinCall(key) builds the exact onclick body for a chip's ✕ — active rows
+// unpin against the live working set, saved-but-inactive rows unpin against
+// that song's persisted scales, so the call differs per row type.
+function renderNestedScales(keys, unpinCall) {
+  if (!keys.length) return '';
+  return `<div class="song-item-nested">` + keys.map(key => {
+    const sep = key.indexOf(':');
+    const root = +key.slice(0, sep);
+    const scaleName = key.slice(sep + 1);
+    return `
+    <div class="song-item-nested-row" onclick="openScaleModal(${root},'${scaleName}')">
+      <span class="nested-swatch"></span>
+      <span class="nested-name">${noteName(root)} ${scaleName}</span>
+      <span class="nested-type">scale</span>
+      <span class="nested-unpin" onclick="event.stopPropagation();${unpinCall(key)}" title="Unpin">✕</span>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+// The active row's baseline is "what's actually saved" — anything live sel/
+// pickedScales differs from that is unsaved, which is the only time Save
+// needs to show at all.
+let savedSnapshot = null;
+function snapshotKey() {
+  return JSON.stringify({ notes: [...sel].sort((a, b) => a - b), scales: [...pickedScales].sort() });
+}
+function isDirty() {
+  return currentSong ? savedSnapshot !== snapshotKey() : sel.size > 0;
+}
+
+function renderLibrary() {
   const list = document.getElementById('drawer-list');
-  list.innerHTML = '<div class="sidebar-empty">Loading…</div>';
-  drawerSongs = await fetchSongs();
-  if (drawerSongs.length === 0) {
+  if (!list) return;
+  if (list.querySelector('.song-item-name-edit')) return; // don't clobber an in-progress rename
+
+  if (librarySongs.length === 0 && libraryTrash.length === 0 && sel.size === 0) {
     list.innerHTML = '<div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>';
     return;
   }
-  list.innerHTML = drawerSongs.map((song, idx) => {
-    const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
-    const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
-    const date       = new Date(song.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-    const scaleLabel = scales.length ? ` · ${scales.length} scale${scales.length > 1 ? 's' : ''}` : '';
-    return `
-    <div class="song-item" onclick="loadSong(${idx})">
-      <div class="song-item-icon">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v8.5a2.5 2.5 0 1 1-2-2.449V5l6-2v7.5a2.5 2.5 0 1 1-2-2.449V3.333L9 3z"/></svg>
-      </div>
+
+  let html = '';
+  const saveBtn = isDirty() ? `<button class="song-item-save" onclick="event.stopPropagation();saveActiveRow()">Save</button>` : '';
+  // Double-clicking anywhere on an active row (not just the name) starts a
+  // rename — a plain click no longer does, so it can't be triggered by accident.
+  const dblclickRename = songId => `ondblclick="event.stopPropagation();startRenameActiveRow(this.querySelector('.song-item-name'), ${songId})"`;
+
+  // In-progress draft with no saved song behind it yet — always sits on top.
+  // Nothing to trash yet, so no trash button here.
+  if (!currentSong && (sel.size > 0 || draftStarted)) {
+    const pinned = [...pickedScales];
+    const expanded = expandedSongs.has('draft');
+    html += `
+    <div class="song-item active-row" ${dblclickRename('null')}>
+      ${pinned.length ? `<span class="song-item-chevron${expanded ? ' expanded' : ''}" onclick="event.stopPropagation();toggleSongExpand('draft')">▸</span>` : ''}
       <div class="song-item-body">
+        <div class="song-item-name">${pendingSongName}</div>
+      </div>
+      ${saveBtn}
+    </div>`;
+    if (pinned.length && expanded) html += renderNestedScales(pinned, key => `unpinFromActiveRow('${key}')`);
+  }
+
+  for (const song of librarySongs) {
+    const { scales } = parseSongFields(song);
+    const date = new Date(song.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    if (currentSong && currentSong.id === song.id) {
+      const pinned = [...pickedScales];
+      const scaleLabel = pinned.length ? ` · ${pinned.length} scale${pinned.length > 1 ? 's' : ''}` : '';
+      const expanded = expandedSongs.has(song.id);
+      html += `
+      <div class="song-item active-row" data-song-id="${song.id}" ${dblclickRename(song.id)}>
+        ${pinned.length ? `<span class="song-item-chevron${expanded ? ' expanded' : ''}" onclick="event.stopPropagation();toggleSongExpand(${song.id})">▸</span>` : ''}
+        <div class="song-item-body">
+          <div class="song-item-name">${song.name}</div>
+          <div class="song-item-meta">${date}${scaleLabel}</div>
+        </div>
+        ${saveBtn}
+        <button class="song-item-trash-btn" onclick="event.stopPropagation();moveToTrash(${song.id})" title="Move to Trash">🗑</button>
+      </div>`;
+      if (pinned.length && expanded) html += renderNestedScales(pinned, key => `unpinFromActiveRow('${key}')`);
+      continue;
+    }
+
+    const scaleLabel = scales.length ? ` · ${scales.length} scale${scales.length > 1 ? 's' : ''}` : '';
+    const hasChildren = scales.length > 0;
+    const expanded = expandedSongs.has(song.id);
+    html += `
+    <div class="song-item" data-song-id="${song.id}">
+      ${hasChildren ? `<span class="song-item-chevron${expanded ? ' expanded' : ''}" onclick="event.stopPropagation();toggleSongExpand(${song.id})">▸</span>` : ''}
+      <div class="song-item-body" onclick="loadSong(${song.id})">
         <div class="song-item-name">${song.name}</div>
         <div class="song-item-meta">${date}${scaleLabel}</div>
       </div>
-      <button class="song-item-delete" onclick="event.stopPropagation();removeSong(${song.id})" title="Delete">&#x2715;</button>
+      <button class="song-item-trash-btn" onclick="event.stopPropagation();moveToTrash(${song.id})" title="Move to Trash">🗑</button>
     </div>`;
-  }).join('');
-}
 
-function updateCurrentSongDisplay() {
-  const strip = document.getElementById('sidebar-current');
-  const name  = document.getElementById('sidebar-current-name');
-  if (currentSong) {
-    name.textContent = currentSong.name;
-    strip.classList.add('visible');
-  } else {
-    strip.classList.remove('visible');
+    if (hasChildren && expanded) {
+      html += renderNestedScales(scales, key => `unpinFromSong(${song.id},'${key}')`);
+    }
   }
+
+  if (libraryTrash.length > 0) {
+    html += `<div class="library-trash-title">Trash<button class="library-empty-trash-btn" onclick="event.stopPropagation();emptyTrash()" title="Empty Trash">🗑</button></div>`;
+    for (const song of libraryTrash) {
+      html += `
+      <div class="song-item trashed" data-song-id="${song.id}">
+        <div class="song-item-body">
+          <div class="song-item-name">${song.name}</div>
+          <div class="song-item-meta">Deleted ${timeSince(song.trashed_at)}</div>
+        </div>
+        <button class="song-item-restore" onclick="event.stopPropagation();restoreFromTrashUI(${song.id})">Restore</button>
+      </div>`;
+    }
+  }
+
+  list.innerHTML = html || '<div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>';
 }
 
-function loadSong(idx) {
-  const song   = drawerSongs[idx];
-  const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
-  const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
-  currentSong  = { id: song.id, name: song.name };
-  updateCurrentSongDisplay();
+function toggleSongExpand(id) {
+  expandedSongs.has(id) ? expandedSongs.delete(id) : expandedSongs.add(id);
+  renderLibrary();
+}
+
+// Unpins against the live working set (used by the active row, whether that's
+// a loaded song or an unsaved draft) — persists immediately if there's a
+// currentSong to persist to.
+async function unpinFromActiveRow(key) {
+  pickedScales.delete(key);
+  analyze();
+  if (currentSong) {
+    await updateSong(currentSong.id, { scales: [...pickedScales] });
+    const cached = librarySongs.find(s => s.id === currentSong.id);
+    if (cached) cached.scales = [...pickedScales];
+    savedSnapshot = snapshotKey();
+  }
+  renderLibrary();
+}
+
+function loadSong(id) {
+  const song = librarySongs.find(s => s.id === id);
+  if (!song) return;
+  const { notes, scales } = parseSongFields(song);
+  currentSong = { id: song.id, name: song.name };
+  pendingSongName = 'Untitled';
+  draftNameTyped = false;
+  draftStarted = false;
   sel.clear();
   notes.forEach(n => sel.add(n));
   pickedScales.clear();
   scales.forEach(k => pickedScales.add(k));
+  expandedSongs = scales.length ? new Set([song.id]) : new Set();
+  savedSnapshot = snapshotKey();
   refreshButtons();
   analyze();
-  // highlight active song in sidebar
-  document.querySelectorAll('.song-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+  renderLibrary();
   history.replaceState(null, '', `${location.pathname}${location.search}#song=${song.id}`);
 }
 
@@ -2418,122 +2823,143 @@ function loadSong(idx) {
 // song no longer exists.
 function restoreSongFromHash() {
   const m = location.hash.match(/^#song=(\d+)$/);
-  const idx = m ? drawerSongs.findIndex(s => s.id === +m[1]) : -1;
-  if (idx === -1) {
+  const found = m ? librarySongs.some(s => s.id === +m[1]) : false;
+  if (!found) {
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
     return;
   }
-  loadSong(idx);
+  loadSong(+m[1]);
 }
 
-async function removeSong(id) {
-  await deleteSong(id);
-  loadDrawer();
+async function moveToTrash(id) {
+  await trashSong(id);
+  if (currentSong && currentSong.id === id) {
+    currentSong = null;
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+  await refreshLibrary();
 }
 
-openDrawer().then(restoreSongFromHash);
-
-// ── SAVE MODAL ────────────────────────────────────────────────────────────────
-
-let conflictId = null;
-
-function resetSaveModal() {
-  conflictId = null;
-  document.getElementById('save-warn').style.display = 'none';
-  document.getElementById('save-actions-normal').style.display = 'flex';
-  document.getElementById('save-actions-conflict').style.display = 'none';
-  document.getElementById('save-input').value = '';
+async function restoreFromTrashUI(id) {
+  await restoreSong(id);
+  await refreshLibrary();
 }
 
-function openSaveModal() {
-  if (sel.size === 0) { alert('Select some notes first!'); return; }
-  resetSaveModal();
-  document.getElementById('save-overlay').classList.add('open');
-  setTimeout(() => document.getElementById('save-input').focus(), 150);
+async function emptyTrash() {
+  if (libraryTrash.length === 0) return;
+  if (!confirm(`Permanently delete ${libraryTrash.length} song${libraryTrash.length > 1 ? 's' : ''} from Trash? This can't be undone.`)) return;
+  await Promise.all(libraryTrash.map(s => deleteSong(s.id)));
+  await refreshLibrary();
 }
 
-function closeSaveModal() {
-  document.getElementById('save-overlay').classList.remove('open');
+async function unpinFromSong(songId, key) {
+  const song = librarySongs.find(s => s.id === songId);
+  if (!song) return;
+  const { scales } = parseSongFields(song);
+  const updated = scales.filter(k => k !== key);
+  await updateSong(songId, { scales: updated });
+  if (currentSong && currentSong.id === songId) {
+    pickedScales.delete(key);
+    analyze();
+  }
+  await refreshLibrary();
 }
 
-async function confirmSave() {
-  const name = document.getElementById('save-input').value.trim();
-  if (!name) { document.getElementById('save-input').focus(); return; }
+// Click-to-rename: swaps the row's name for an input, focused immediately.
+// songId null means "this is the unsaved draft" — commits to pendingSongName
+// locally instead of hitting the API (nothing exists to rename yet).
+// andSave means this rename exists only to unblock a Save click that was
+// refused for an untyped name — finish that save however the rename ends
+// (blur is the common case; Enter still works too), not just on Enter.
+function startRenameActiveRow(nameEl, songId, andSave = false) {
+  const current = nameEl.textContent;
+  const input = document.createElement('input');
+  input.className = 'song-item-name-edit';
+  input.value = current === 'Untitled' ? '' : current;
+  input.placeholder = 'Untitled';
+  nameEl.replaceWith(input);
+  input.focus();
+  input.select();
+  let committed = false;
+  const commit = async () => {
+    if (committed) return;
+    committed = true;
+    const typed = input.value.trim();
+    const val = typed || 'Untitled';
+    input.remove(); // renderLibrary() refuses to run while this input is still in the DOM
+    if (songId) {
+      const updated = await updateSong(songId, { name: val });
+      if (currentSong && currentSong.id === songId) currentSong.name = updated.name;
+      await refreshLibrary();
+    } else {
+      pendingSongName = val;
+      if (typed) draftNameTyped = true; // an untouched blur still defaults to 'Untitled' but doesn't count as naming it
+      renderLibrary();
+      if (andSave && typed) await saveActiveRow();
+    }
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', ev => {
+    // andSave's draft case already saves from inside commit() above — chaining
+    // saveActiveRow here too would fire a second, redundant save call.
+    if (ev.key === 'Enter') { if (songId === null && andSave) commit(); else commit().then(saveActiveRow); }
+  });
+}
 
-  const songs = await fetchSongs();
-  const existing = songs.find(s => s.name.toLowerCase() === name.toLowerCase());
-  if (existing) {
-    conflictId = existing.id;
-    const warn = document.getElementById('save-warn');
-    warn.textContent = `"${name}" already exists. Overwrite it or choose a different name.`;
-    warn.style.display = 'block';
-    document.getElementById('save-actions-normal').style.display = 'none';
-    document.getElementById('save-actions-conflict').style.display = 'flex';
+async function saveActiveRow() {
+  if (sel.size === 0) return;
+  if (currentSong) {
+    const updated = await updateSong(currentSong.id, { notes: [...sel], scales: [...pickedScales] });
+    currentSong.name = updated.name;
+    savedSnapshot = snapshotKey();
+    await refreshLibrary();
     return;
   }
-
-  try {
-    const saved = await saveSong(name, [...sel], [...pickedScales]);
-    currentSong = { id: saved.id, name: saved.name };
-    updateCurrentSongDisplay();
-    closeSaveModal();
-    loadDrawer();
-  } catch (err) {
-    if (err.code === 'duplicate') {
-      // DB caught it (race condition) — surface the conflict UI
-      const songs = await fetchSongs();
-      const existing = songs.find(s => s.name.toLowerCase() === name.toLowerCase());
-      if (existing) conflictId = existing.id;
-      const warn = document.getElementById('save-warn');
-      warn.textContent = `"${name}" already exists. Overwrite it or choose a different name.`;
-      warn.style.display = 'block';
-      document.getElementById('save-actions-normal').style.display = 'none';
-      document.getElementById('save-actions-conflict').style.display = 'flex';
-    }
+  if (!draftNameTyped) {
+    // Refuse to save the untouched "Untitled" placeholder — force a real
+    // name first, then re-run this same save once it's committed.
+    const nameEl = document.querySelector('#drawer-list .song-item.active-row .song-item-name');
+    if (nameEl) startRenameActiveRow(nameEl, null, true);
+    return;
   }
+  const saved = await saveSong(pendingSongName, [...sel], [...pickedScales]);
+  currentSong = { id: saved.id, name: saved.name };
+  // The draft's accordion state was tracked under the 'draft' key — carry it
+  // over to the song's real id so saving doesn't visually collapse it.
+  if (expandedSongs.has('draft')) { expandedSongs.delete('draft'); expandedSongs.add(saved.id); }
+  history.replaceState(null, '', `${location.pathname}${location.search}#song=${saved.id}`);
+  savedSnapshot = snapshotKey();
+  await refreshLibrary();
 }
 
-async function overwriteSave() {
-  const name = document.getElementById('save-input').value.trim();
-  if (conflictId) await deleteSong(conflictId);
-  conflictId = null;
-  try {
-    const saved = await saveSong(name, [...sel], [...pickedScales]);
-    currentSong = { id: saved.id, name: saved.name };
-    updateCurrentSongDisplay();
-    closeSaveModal();
-    loadDrawer();
-  } catch (err) {
-    if (err.code === 'duplicate') renameSave();
-  }
+// + menu (New / Import)
+function togglePlusMenu() {
+  const menu = document.getElementById('plus-menu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
-
-function renameSave() {
-  conflictId = null;
-  document.getElementById('save-warn').style.display = 'none';
-  document.getElementById('save-actions-normal').style.display = 'flex';
-  document.getElementById('save-actions-conflict').style.display = 'none';
-  const input = document.getElementById('save-input');
-  input.select();
-  input.focus();
-}
-
-document.getElementById('save-cancel').addEventListener('click', closeSaveModal);
-document.getElementById('save-confirm').addEventListener('click', confirmSave);
-document.getElementById('save-overwrite').addEventListener('click', overwriteSave);
-document.getElementById('save-rename').addEventListener('click', renameSave);
-document.getElementById('save-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') confirmSave();
-  if (e.key === 'Escape') closeSaveModal();
+document.addEventListener('click', e => {
+  if (!e.target.closest('#btn-plus, #plus-menu')) document.getElementById('plus-menu').style.display = 'none';
 });
+document.getElementById('menu-new-item').addEventListener('click', () => {
+  document.getElementById('plus-menu').style.display = 'none';
+  startNewSong();
+});
+
+refreshLibrary().then(restoreSongFromHash);
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 buildNoteGrid();
+syncInstrumentButtons(); // reflect the default immediately; settings may override below
 
 fetchSettings().then(s => {
   if (s.instrument === 'guitar' || s.instrument === 'bass') {
-    modalInstrument = s.instrument;
+    instrument = s.instrument;
+  }
+  syncInstrumentButtons();
+  if (s.resultsView === 'chords') {
+    resultsView = 'chords';
+    document.querySelectorAll('.results-view-btn').forEach(b => b.classList.toggle('on', b.dataset.view === 'chords'));
   }
   if (s.scaleView === 'position') {
     modalView = 'position';
