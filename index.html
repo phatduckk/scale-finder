@@ -744,6 +744,13 @@ body {
   gap: 4px;
 }
 
+/* Chords are guitar-only — hide the instrument switcher and Pin (chords
+   aren't part of the pickedScales/"My Scales" concept) while one is shown */
+.modal.is-chord .modal-inst-group,
+.modal.is-chord .modal-pin-btn { display: none; }
+/* A real fixed voicing has no "All Notes"/"Position" — it's one exact shape */
+.modal.has-diagram .modal-view-group { display: none; }
+
 .modal-inst-btn, .modal-view-btn {
   padding: 5px 14px;
   border: 2px solid #e2e8f0;
@@ -771,6 +778,24 @@ body {
 .fboard {
   width: 100%;
 }
+
+/* Chord voicing diagram — conventional vertical orientation (nut at top,
+   strings left-to-right low E to high e), same layout guitarists actually
+   read chord shapes in. Deliberately different from the horizontal scale
+   fretboard above, which is the right call for a single fixed shape. */
+.chord-diagram { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 24px 28px; }
+.cd-marker { position: absolute; text-align: center; font-size: 13px; font-weight: 800; color: var(--text-muted); }
+.cd-marker.cd-mute { color: #ef4444; }
+.cd-marker.cd-open { color: #16a34a; }
+.cd-grid { position: relative; }
+.cd-string { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--border); }
+.cd-fretline { position: absolute; left: 0; right: 0; height: 2px; background: var(--border); }
+.cd-nut { position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--text-primary); border-radius: 1px; }
+.cd-dot { position: absolute; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; background: #e2e8f0; color: #475569; border: 2px solid #94a3b8; }
+.cd-dot.is-root  { background: var(--accent-blue-bg); color: var(--accent-blue-text); border-color: var(--accent-blue-border); }
+.cd-dot.is-third { background: var(--accent-teal-bg); color: var(--accent-teal-text); border-color: var(--accent-teal-border); }
+.cd-dot.is-fifth { background: var(--accent-purple-bg); color: var(--accent-purple-text); border-color: var(--accent-purple-border); }
+.cd-startfret { font-size: 12px; font-weight: 700; color: var(--text-muted); align-self: flex-start; margin-left: 4px; }
 
 /* Fret number header row */
 .fret-num-row {
@@ -1257,6 +1282,10 @@ body {
           <path d="M1.5 3.5h10M4.5 3.5V2.5A.75.75 0 015.25 1.75h2.5A.75.75 0 018.5 2.5v1M3 3.5l.75 7a.75.75 0 00.748.75h4a.75.75 0 00.748-.75L10 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
+      <div class="acc-tog" id="main-inst-tog" style="margin-left:10px;">
+        <button class="acc-btn main-inst-btn" data-inst="guitar" onclick="setInstrument('guitar')">Guitar</button>
+        <button class="acc-btn main-inst-btn" data-inst="bass"   onclick="setInstrument('bass')">Bass</button>
+      </div>
       <div class="acc-tog" id="main-acc-tog" style="margin-left:10px;">
         <button class="acc-btn" id="acc-sharp" onclick="setAccidental(false)">#</button>
         <button class="acc-btn" id="acc-flat" onclick="setAccidental(true)">♭</button>
@@ -1397,12 +1426,12 @@ let currentSong = null;         // { id, name } of the loaded song, if any
 let chordRootFreq = new Map();  // noteIdx -> how many times it appeared as chord root
 let firstChordRoot = null;      // root note of the very first chord parsed (likely the tonic)
 let appliedChords = new Map();  // noteIdx -> chord quality applied via popover
-let instrument = 'guitar';
-let modalInstrument = 'guitar';
+let instrument = 'guitar'; // app-wide: drives the fretboard's strings and whether chords are shown
 let modalView = 'all'; // 'all' | 'position'
 let anchorNote = null; // { stringIdx, fret, direction: 1 | -1 } — click-to-anchor run, overrides modalView when set
 let modalRoot = 0;
 let modalScaleName = '';
+let modalChordQuality = null; // set instead of modalScaleName when the modal is showing a chord
 let useFlats = false;
 
 function noteName(idx) {
@@ -1422,7 +1451,7 @@ function setAccidental(flats) {
   analyze();
   const overlay = document.getElementById('modal-overlay');
   if (overlay.classList.contains('open')) {
-    const scale = SCALES.find(s => s.name === modalScaleName);
+    const scale = getModalScaleData();
     if (!scale) return;
     document.getElementById('modal-root').textContent = noteName(modalRoot);
     const scaleNotes = scale.iv.map(iv => (modalRoot + iv) % 12);
@@ -1627,7 +1656,16 @@ function analyze() {
   // 1. My Scales (full cards)
   let html = buildMyScales(input, matches);
 
-  // 2. Scale groups by type
+  // 2. Chord reference — only meaningful with exactly one note selected, and
+  // only for guitar (these are strummed voicings, not something bass plays)
+  if (singleNote && instrument === 'guitar') {
+    html += `<div class="section-title" style="margin:18px 0 10px">${noteName(input[0])}'s Chords</div>`;
+    html += `<div class="scale-cards">`;
+    CHORD_DISPLAY_ORDER.forEach(q => { html += buildChordCard(input[0], q); });
+    html += `</div>`;
+  }
+
+  // 3. Scale groups by type
   if (singleNote) {
     const rooted   = matches.filter(m => m.root === input[0]);
     const relative = matches.filter(m => m.root !== input[0]);
@@ -1720,16 +1758,41 @@ function noteRole(noteIdx, root, scale) {
   return 'scale';
 }
 
+// A chord quality is structurally the same shape as a scale (root + interval
+// list), so it can be pushed through the exact same modal/fretboard pipeline —
+// position boxes, click-to-anchor runs, root/third/fifth coloring — without a
+// parallel implementation. This returns whichever one is currently loaded.
+function getModalScaleData() {
+  if (modalChordQuality) {
+    return { name: CHORD_LABELS[modalChordQuality] || modalChordQuality, iv: CHORD_INTERVALS[modalChordQuality] };
+  }
+  return SCALES.find(s => s.name === modalScaleName);
+}
+
 function openScaleModal(root, scaleName) {
   const scale = SCALES.find(s => s.name === scaleName);
   if (!scale) return;
-
   modalRoot = root;
   modalScaleName = scaleName;
-
-  document.getElementById('modal-root').textContent = noteName(root);
-  document.getElementById('modal-scale-name').textContent = scaleName;
+  modalChordQuality = null;
+  document.getElementById('modal').classList.remove('is-chord');
   document.getElementById('modal-alias').textContent = scale.alias ? `/ ${scale.alias}` : '';
+  showModal(root, scale);
+}
+
+function openChordModal(root, quality) {
+  if (!CHORD_INTERVALS[quality]) return;
+  modalRoot = root;
+  modalScaleName = '';
+  modalChordQuality = quality;
+  document.getElementById('modal').classList.add('is-chord');
+  document.getElementById('modal-alias').textContent = '';
+  showModal(root, getModalScaleData());
+}
+
+function showModal(root, scale) {
+  document.getElementById('modal-root').textContent = noteName(root);
+  document.getElementById('modal-scale-name').textContent = scale.name;
 
   // Note pills with triad colors
   const scaleNotes = scale.iv.map(iv => (root + iv) % 12);
@@ -1744,7 +1807,7 @@ function openScaleModal(root, scaleName) {
   document.getElementById('modal-notes-row').innerHTML = notePills;
 
   document.querySelectorAll('.modal-inst-btn').forEach(b => {
-    b.classList.toggle('on', b.dataset.minst === modalInstrument);
+    b.classList.toggle('on', b.dataset.minst === instrument);
   });
   document.querySelectorAll('.modal-view-btn').forEach(b => {
     b.classList.toggle('on', b.dataset.mview === modalView);
@@ -1752,7 +1815,17 @@ function openScaleModal(root, scaleName) {
 
   litFrets = new Set();
   anchorNote = null;
-  renderFretboard(root, scale);
+
+  // A verified real voicing takes priority over the derived fretboard-position
+  // view — "All Notes"/"Position" don't mean anything for one fixed shape.
+  const voicing = modalChordQuality ? getChordVoicing(root, modalChordQuality) : null;
+  document.getElementById('modal').classList.toggle('has-diagram', !!voicing);
+  if (voicing) {
+    document.getElementById('fboard').innerHTML = renderChordDiagram(root, modalChordQuality, voicing);
+  } else {
+    renderFretboard(root, scale);
+  }
+
   syncModalPin();
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1774,6 +1847,7 @@ function computeScalePositionNotes(strings, scale, root) {
   const n = seq.length;
   const orderedStrings = [...strings].reverse(); // low string first
   const MAX_STRING_SPAN = 3; // widest comfortable single-string stretch in one hand position
+  const MAX_TOTAL_SPAN = 5;  // widest comfortable span across the whole shape, any strings
 
   const findFret = (str, pitch, minFret) => {
     for (let f = minFret; f <= NUM_FRETS; f++) {
@@ -1795,6 +1869,7 @@ function computeScalePositionNotes(strings, scale, root) {
   let stringIdx = 0;
   let firstFretOnString = anchorFret;
   let lastFret = anchorFret;
+  let spanMin = anchorFret, spanMax = anchorFret;
   place(0, anchorFret);
 
   // Pentatonic/blues-sized scales (<=6 notes) are conventionally shown as a fixed
@@ -1809,21 +1884,28 @@ function computeScalePositionNotes(strings, scale, root) {
     let str = orderedStrings[stringIdx];
     let fret = findFret(str, pitch, lastFret + 1);
     if (fret !== null && fret - firstFretOnString > MAX_STRING_SPAN) fret = null;
+    if (fret !== null && Math.max(spanMax, fret) - Math.min(spanMin, fret) > MAX_TOTAL_SPAN) fret = null;
 
     if (fret === null) {
       if (stringIdx + 1 >= orderedStrings.length) break; // out of strings — position is complete
-      stringIdx++;
-      str = orderedStrings[stringIdx];
+      const nextIdx = stringIdx + 1;
+      const nextStr = orderedStrings[nextIdx];
       // Allow fret 0 here (unlike the anchor string): if this string's open note
       // happens to be the note we need, the alternative is jumping a full octave
       // up to the next occurrence, which is far worse than one incidental open note.
-      fret = findFret(str, pitch, Math.max(0, lastFret - 6));
-      if (fret === null) break;
+      let nextFret = findFret(nextStr, pitch, Math.max(0, lastFret - 6));
+      if (nextFret !== null && Math.max(spanMax, nextFret) - Math.min(spanMin, nextFret) > MAX_TOTAL_SPAN) nextFret = null;
+      if (nextFret === null) break; // no way to keep going without leaving the hand position
+      stringIdx = nextIdx;
+      str = nextStr;
+      fret = nextFret;
       firstFretOnString = fret;
     }
 
     place(stringIdx, fret);
     lastFret = fret;
+    spanMin = Math.min(spanMin, fret);
+    spanMax = Math.max(spanMax, fret);
     if (stopAtOctave && pitch === root) break; // reached the octave — one octave is the whole shape
   }
 
@@ -1840,6 +1922,7 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
   const n = seq.length;
   const orderedStrings = [...strings].reverse(); // low string first
   const MAX_STRING_SPAN = 3;
+  const MAX_TOTAL_SPAN = 5;
 
   const startPitch = (strings[anchorStringIdx].open + anchorFret) % 12;
   const startDegree = seq.indexOf(startPitch);
@@ -1860,6 +1943,7 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
   let orderedIdx = strings.length - 1 - anchorStringIdx;
   let firstFretOnString = anchorFret;
   let lastFret = anchorFret;
+  let spanMin = anchorFret, spanMax = anchorFret;
   place(orderedIdx, anchorFret);
 
   const stopAtOctave = n >= 7;
@@ -1870,29 +1954,90 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
     let str = orderedStrings[orderedIdx];
     let fret = findFret(str, pitch, lastFret + direction);
     if (fret !== null && Math.abs(fret - firstFretOnString) > MAX_STRING_SPAN) fret = null;
+    if (fret !== null && Math.max(spanMax, fret) - Math.min(spanMin, fret) > MAX_TOTAL_SPAN) fret = null;
 
     if (fret === null) {
       const nextIdx = orderedIdx + direction;
       if (nextIdx < 0 || nextIdx >= orderedStrings.length) break; // out of strings — position is complete
-      orderedIdx = nextIdx;
-      str = orderedStrings[orderedIdx];
+      const nextStr = orderedStrings[nextIdx];
       const searchFrom = direction > 0 ? Math.max(0, lastFret - 6) : Math.min(NUM_FRETS, lastFret + 6);
-      fret = findFret(str, pitch, searchFrom);
-      if (fret === null) break;
+      let nextFret = findFret(nextStr, pitch, searchFrom);
+      if (nextFret !== null && Math.max(spanMax, nextFret) - Math.min(spanMin, nextFret) > MAX_TOTAL_SPAN) nextFret = null;
+      if (nextFret === null) break; // no way to keep going without leaving the hand position
+      orderedIdx = nextIdx;
+      str = nextStr;
+      fret = nextFret;
       firstFretOnString = fret;
     }
 
     place(orderedIdx, fret);
     lastFret = fret;
+    spanMin = Math.min(spanMin, fret);
+    spanMax = Math.max(spanMax, fret);
     if (stopAtOctave && pitch === startPitch) break; // back to the same note an octave away
   }
 
   return placements;
 }
 
+// Renders a single fixed chord voicing in the conventional vertical chord-box
+// layout (nut at top, strings left-to-right low E to high e) — the way
+// guitarists actually read a named shape, as opposed to the horizontal
+// full-neck view used for scale positions.
+function renderChordDiagram(root, quality, voicing) {
+  const { frets } = voicing;
+  const STRING_GAP = 56, ROW_HEIGHT = 56, DOT = 42; // matches the scale fretboard's .ndot size
+  const openNotes = [4, 9, 2, 7, 11, 4]; // low E, A, D, G, B, high e
+  const pseudoScale = { iv: CHORD_INTERVALS[quality] };
+
+  const playedFrets = frets.filter(f => f !== 'x' && f > 0);
+  const hasOpen = frets.some(f => f === 0);
+  const maxFret = playedFrets.length ? Math.max(...playedFrets) : 0;
+  const minFret = playedFrets.length ? Math.min(...playedFrets) : 0;
+  const windowStart = hasOpen ? 0 : minFret;
+  // topFret is the fret the very top grid line represents as a boundary — the
+  // nut itself for an open-position shape, or one fret below the lowest
+  // fretted note when the whole shape sits higher up the neck (in which case
+  // a "Nfr" label marks where that boundary actually falls on the real neck).
+  const topFret = hasOpen ? 0 : windowStart - 1;
+  const numRows = Math.max(4, maxFret - topFret);
+  const showFretLabel = windowStart > 0;
+  const gridWidth = STRING_GAP * 5;
+  const gridHeight = ROW_HEIGHT * numRows;
+
+  let markers = `<div class="cd-markers" style="position:relative;width:${gridWidth}px;height:22px">`;
+  frets.forEach((f, s) => {
+    const cls = f === 'x' ? 'cd-mute' : f === 0 ? 'cd-open' : '';
+    const label = f === 'x' ? '✕' : f === 0 ? '○' : '';
+    markers += `<div class="cd-marker ${cls}" style="left:${s * STRING_GAP - STRING_GAP / 2}px;width:${STRING_GAP}px">${label}</div>`;
+  });
+  markers += '</div>';
+
+  let grid = `<div class="cd-grid" style="width:${gridWidth}px;height:${gridHeight}px">`;
+  if (!showFretLabel) grid += `<div class="cd-nut" style="width:${gridWidth}px"></div>`;
+  for (let s = 0; s < 6; s++) {
+    grid += `<div class="cd-string" style="left:${s * STRING_GAP}px;height:${gridHeight}px"></div>`;
+  }
+  for (let r = 0; r <= numRows; r++) {
+    grid += `<div class="cd-fretline" style="top:${r * ROW_HEIGHT}px;width:${gridWidth}px"></div>`;
+  }
+  frets.forEach((f, s) => {
+    if (f === 'x' || f === 0) return;
+    const top = (f - topFret - 0.5) * ROW_HEIGHT - DOT / 2;
+    const left = s * STRING_GAP - DOT / 2;
+    const pitch = (openNotes[s] + f) % 12;
+    const role = noteRole(pitch, root, pseudoScale);
+    grid += `<div class="cd-dot is-${role}" style="top:${top}px;left:${left}px;width:${DOT}px;height:${DOT}px">${noteName(pitch)}</div>`;
+  });
+  grid += '</div>';
+
+  const fretLabel = showFretLabel ? `<div class="cd-startfret">${windowStart}fr</div>` : '';
+  return `<div class="chord-diagram">${markers}${grid}${fretLabel}</div>`;
+}
+
 function renderFretboard(root, scale) {
   const scaleNotes = new Set(scale.iv.map(iv => (root + iv) % 12));
-  const strings = modalInstrument === 'bass' ? BASS_STRINGS : GUITAR_STRINGS;
+  const strings = instrument === 'bass' ? BASS_STRINGS : GUITAR_STRINGS;
   let positionNotes = anchorNote
     ? computeAnchoredPositionNotes(strings, scale, root, anchorNote.stringIdx, anchorNote.fret, anchorNote.direction)
     : modalView === 'position' ? computeScalePositionNotes(strings, scale, root) : null;
@@ -2021,7 +2166,7 @@ function initFretDrag() {
       anchorNote = { stringIdx, fret, direction: 1 };
     }
 
-    const scale = SCALES.find(s => s.name === modalScaleName);
+    const scale = getModalScaleData();
     if (scale) renderFretboard(modalRoot, scale);
   });
 }
@@ -2054,16 +2199,28 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
 
-// Modal instrument toggle
+// Instrument is app-wide — the main-page and in-modal toggles are two views of
+// the same setting, so both go through here and stay in sync.
+function setInstrument(inst) {
+  if (inst !== 'guitar' && inst !== 'bass') return;
+  instrument = inst;
+  syncInstrumentButtons();
+  saveSetting('instrument', instrument).catch(() => {});
+  anchorNote = null; // string indices don't carry over between instruments
+  const scale = getModalScaleData();
+  if (scale && document.getElementById('modal-overlay').classList.contains('open')) {
+    renderFretboard(modalRoot, scale);
+  }
+  analyze(); // chords are guitar-only, so the results need rebuilding
+}
+
+function syncInstrumentButtons() {
+  document.querySelectorAll('.main-inst-btn').forEach(b => b.classList.toggle('on', b.dataset.inst === instrument));
+  document.querySelectorAll('.modal-inst-btn').forEach(b => b.classList.toggle('on', b.dataset.minst === instrument));
+}
+
 document.querySelectorAll('.modal-inst-btn').forEach(b => {
-  b.addEventListener('click', () => {
-    modalInstrument = b.dataset.minst;
-    document.querySelectorAll('.modal-inst-btn').forEach(x => x.classList.toggle('on', x === b));
-    saveSetting('instrument', modalInstrument).catch(() => {});
-    anchorNote = null; // string indices don't carry over between instruments
-    const scale = SCALES.find(s => s.name === modalScaleName);
-    if (scale) renderFretboard(modalRoot, scale);
-  });
+  b.addEventListener('click', () => setInstrument(b.dataset.minst));
 });
 
 // Modal view toggle (all notes vs. single lesson-book position)
@@ -2073,7 +2230,7 @@ document.querySelectorAll('.modal-view-btn').forEach(b => {
     document.querySelectorAll('.modal-view-btn').forEach(x => x.classList.toggle('on', x === b));
     saveSetting('scaleView', modalView).catch(() => {});
     anchorNote = null; // an explicit view choice overrides any active anchored run
-    const scale = SCALES.find(s => s.name === modalScaleName);
+    const scale = getModalScaleData();
     if (scale) renderFretboard(modalRoot, scale);
   });
 });
@@ -2089,6 +2246,40 @@ const NOTE_TO_IDX = {
 const TAB_STRINGS = {
   'E':4, 'A':9, 'D':2, 'G':7, 'B':11, 'e':4
 };
+
+// Curated display order for the "<Note>'s Chords" reference section — most
+// commonly used qualities first.
+const CHORD_DISPLAY_ORDER = ['maj','m','7','maj7','m7','dim','aug','sus2','sus4','add9','m9','dim7','m7b5','mM7','madd9','9','5'];
+
+function chordIntervalRole(iv) {
+  const semis = iv % 12;
+  if (semis === 0) return 'root';
+  if (semis === 3 || semis === 4) return 'third';
+  if (semis === 6 || semis === 7 || semis === 8) return 'fifth';
+  return 'scale'; // 2nd/7th/9th — no dedicated accent color, shown neutral
+}
+
+function buildChordCard(root, quality) {
+  const ivs = CHORD_INTERVALS[quality];
+  if (!ivs) return '';
+  const rootName = noteName(root);
+  const suffix = quality === 'maj' ? '' : quality;
+  let pills = '';
+  for (const iv of ivs) {
+    const ni = (root + iv) % 12;
+    const role = chordIntervalRole(iv);
+    const cls = role === 'scale' ? 'snote scale' : `snote triad-${role}`;
+    pills += `<div class="${cls}">${noteName(ni)}</div>`;
+  }
+  return `
+  <div class="scale-card" onclick="openChordModal(${root}, '${quality}')">
+    <div class="scale-card-hdr">
+      <span class="scale-root">${rootName}${suffix}</span>
+      <span class="scale-count">${ivs.length} notes</span>
+    </div>
+    <div class="note-row">${pills}</div>
+  </div>`;
+}
 
 const CHORD_INTERVALS = {
   'maj':   [0,4,7],
@@ -2109,6 +2300,95 @@ const CHORD_INTERVALS = {
   '9':     [0,4,7,10,14],
   'm9':    [0,3,7,10,14],
 };
+
+const CHORD_LABELS = {
+  'maj': 'Major', 'm': 'Minor', '5': 'Power Chord', 'dim': 'Diminished', 'aug': 'Augmented',
+  '7': 'Dominant 7th', 'maj7': 'Major 7th', 'm7': 'Minor 7th', 'mM7': 'Minor-Major 7th',
+  'm7b5': 'Half-Diminished (m7♭5)', 'dim7': 'Diminished 7th', 'sus2': 'Sus2', 'sus4': 'Sus4',
+  'add9': 'Add9', 'madd9': 'Minor Add9', '9': 'Dominant 9th', 'm9': 'Minor 9th',
+};
+
+// ── REAL CHORD VOICINGS ──────────────────────────────────────────────────────
+//
+// Fret-per-string shapes (low E to high e; 'x' = muted, 0 = open), for the
+// qualities where a single well-known guitar shape exists. Every shape below
+// was checked against CHORD_INTERVALS by computing each string's actual
+// sounding pitch class — not eyeballed from a chart — so they're guaranteed
+// to contain exactly the right notes.
+//
+// E_SHAPE / A_SHAPE are the classic movable "barre" templates (root on the
+// low E string / A string respectively, at fret 0 = open position). For any
+// other root the same finger pattern just slides up by however many frets
+// that root sits above E (or above A) — whichever is the lower position.
+const E_SHAPE = {
+  maj:   [0,2,2,1,0,0],
+  m:     [0,2,2,0,0,0],
+  '7':   [0,2,0,1,0,0],
+  maj7:  [0,2,1,1,0,0],
+  m7:    [0,2,0,0,0,0],
+  sus4:  [0,2,2,2,0,0],
+  sus2:  [0,2,4,4,0,0],
+  '5':   [0,2,2,'x','x','x'],
+  dim:   [0,1,2,0,'x',0],
+  aug:   [0,3,2,1,1,0],
+  dim7:  [0,1,2,0,2,0],
+  m7b5:  [0,1,0,0,3,0],
+  mM7:   [0,2,1,0,0,0],
+  add9:  [0,2,4,1,0,0],
+  madd9: [0,2,4,0,0,0],
+  '6':   [0,2,2,1,2,0],
+  m6:    [0,2,2,0,2,0],
+  '9':   [0,2,0,1,3,2],
+  m9:    [0,2,0,0,3,2],
+};
+const A_SHAPE = {
+  maj:   ['x',0,2,2,2,0],
+  m:     ['x',0,2,2,1,0],
+  '7':   ['x',0,2,0,2,0],
+  maj7:  ['x',0,2,1,2,0],
+  m7:    ['x',0,2,0,1,0],
+  sus4:  ['x',0,2,2,3,0],
+  sus2:  ['x',0,2,2,0,0],
+  '5':   ['x',0,2,'x','x','x'],
+  dim:   ['x',0,1,2,1,'x'],
+  aug:   ['x',0,3,2,2,1],
+  dim7:  ['x',0,1,2,1,2],
+  m7b5:  ['x',0,1,0,1,3],
+  mM7:   ['x',0,2,1,1,0],
+  add9:  ['x',0,2,4,2,0],
+  madd9: ['x',0,2,4,1,0],
+  '6':   ['x',0,2,2,2,2],
+  m6:    ['x',0,2,2,1,2],
+  '9':   ['x',4,2,0,0,5],
+  m9:    ['x',3,2,0,0,5],
+};
+// A few classic open-position shapes that are more idiomatic than the movable
+// templates above for these specific roots — every guitarist's first chords.
+const OPEN_CHORD_SHAPES = {
+  4:  { maj:[0,2,2,1,0,0], m:[0,2,2,0,0,0], '7':[0,2,0,1,0,0], maj7:[0,2,1,1,0,0], m7:[0,2,0,0,0,0], sus4:[0,2,2,2,0,0] }, // E
+  9:  { maj:['x',0,2,2,2,0], m:['x',0,2,2,1,0], '7':['x',0,2,0,2,0], maj7:['x',0,2,1,2,0], m7:['x',0,2,0,1,0], sus4:['x',0,2,2,3,0], sus2:['x',0,2,2,0,0] }, // A
+  2:  { maj:['x','x',0,2,3,2], m:['x','x',0,2,3,1], '7':['x','x',0,2,1,2], maj7:['x','x',0,2,2,2], m7:['x','x',0,2,1,1], sus4:['x','x',0,2,3,3] }, // D
+  7:  { maj:[3,2,0,0,0,3], '7':[3,2,0,0,0,1], maj7:[3,2,0,0,0,2] }, // G
+  0:  { maj:['x',3,2,0,1,0], '7':['x',3,2,3,1,0], maj7:['x',3,2,0,0,0] }, // C
+  11: { '7':['x',2,1,2,0,2] }, // B
+};
+
+// Returns { frets, startFret } for a root+quality we have a verified shape
+// for, or null if this quality isn't one of them (caller should fall back to
+// the derived fretboard-position view instead of guessing).
+function getChordVoicing(root, quality) {
+  const openShape = OPEN_CHORD_SHAPES[root] && OPEN_CHORD_SHAPES[root][quality];
+  if (openShape) return { frets: openShape, startFret: 0 };
+
+  if (!E_SHAPE[quality]) return null;
+  const rootFretE = (root - 4 + 12) % 12;
+  const rootFretA = (root - 9 + 12) % 12;
+  const useE = rootFretE <= rootFretA;
+  const rootFret = useE ? rootFretE : rootFretA;
+  const template = useE ? E_SHAPE[quality] : A_SHAPE[quality];
+  const frets = template.map(v => v === 'x' ? 'x' : v + rootFret);
+  return { frets, startFret: rootFret };
+}
 
 function chordToNotes(token) {
   // Strict: uppercase root only, must consume full token (no trailing junk like "Chords")
@@ -2492,11 +2772,13 @@ document.getElementById('save-input').addEventListener('keydown', e => {
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 buildNoteGrid();
+syncInstrumentButtons(); // reflect the default immediately; settings may override below
 
 fetchSettings().then(s => {
   if (s.instrument === 'guitar' || s.instrument === 'bass') {
-    modalInstrument = s.instrument;
+    instrument = s.instrument;
   }
+  syncInstrumentButtons();
   if (s.scaleView === 'position') {
     modalView = 'position';
   }
