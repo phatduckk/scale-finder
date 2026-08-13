@@ -1042,98 +1042,73 @@ body {
 .song-item:hover .song-item-delete { opacity: 1; }
 .song-item-delete:hover { color: #ff5555; }
 
-/* ── SAVE MODAL ── */
-.save-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(15,23,42,0.4);
-  backdrop-filter: blur(4px);
-  z-index: 300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s;
+/* ── LIBRARY: accordion nesting, active row, trash ── */
+.song-item { position: relative; padding-left: 20px; }
+.song-item-chevron {
+  position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
+  width: 10px; font-size: 9px; color: var(--text-excluded); transition: transform 0.15s;
 }
-.save-overlay.open { opacity: 1; pointer-events: all; }
+.song-item-chevron.expanded { transform: translateY(-50%) rotate(90deg); }
 
-.save-box {
-  background: #fff;
-  border-radius: 16px;
-  padding: 28px;
-  width: 360px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.15);
-  transform: scale(0.97);
-  transition: transform 0.15s;
+.song-item-nested { padding: 2px 6px 4px 32px; display: flex; flex-direction: column; gap: 1px; }
+.song-item-nested-row {
+  display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 5px;
+  font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer;
 }
-.save-overlay.open .save-box { transform: scale(1); }
-.save-box h3 { font-size: 18px; font-weight: 800; margin-bottom: 16px; color: #1e293b; }
-.save-input {
-  width: 100%;
-  padding: 10px 14px;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-family: 'Nunito', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1e293b;
-  outline: none;
-  transition: border-color 0.12s;
-  margin-bottom: 16px;
+.song-item-nested-row:hover { background: var(--accent-blue-bg); color: var(--accent-blue-text); }
+.song-item-nested-row .nested-swatch { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-blue-text); flex-shrink: 0; }
+.song-item-nested-row .nested-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.song-item-nested-row .nested-type {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-excluded);
 }
-.save-input:focus { border-color: #93c5fd; }
-.save-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.save-cancel {
-  padding: 8px 18px;
-  border: 2px solid #e2e8f0;
-  background: #fff;
-  color: #64748b;
-  font-family: 'Nunito', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.12s;
+.song-item-nested-row .nested-unpin { display: none; width: 15px; height: 15px; align-items: center; justify-content: center; color: var(--text-excluded); font-size: 11px; }
+.song-item-nested-row:hover .nested-unpin { display: flex; }
+.song-item-nested-row:hover .nested-type { display: none; }
+.song-item-nested-row .nested-unpin:hover { color: #ef4444; }
+
+/* Currently-loaded (or in-progress unsaved) song: just a highlighted row with Save inline */
+.song-item.active-row { background: var(--accent-green-bg); cursor: default; }
+.song-item.active-row .song-item-name { color: var(--accent-green-text); cursor: text; }
+.song-item-save {
+  height: 24px; padding: 0 9px; margin-right: 6px; font-size: 11px; font-weight: 800; flex-shrink: 0;
+  border-radius: 6px; border: none; background: var(--accent-green-text); color: var(--bg-page); cursor: pointer;
 }
-.save-confirm {
-  padding: 8px 18px;
-  border: 2px solid #3b82f6;
-  background: #3b82f6;
-  color: #fff;
-  font-family: 'Nunito', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.12s;
+.song-item-name-edit {
+  font-size: 13px; font-weight: 700; color: var(--accent-green-text); background: var(--bg-input);
+  border: 1px solid var(--accent-green-text); border-radius: 5px; padding: 0 6px; height: 22px; width: 100%;
+  font-family: inherit; outline: none;
 }
-.save-confirm:hover { background: #2563eb; border-color: #2563eb; }
-.save-warn {
-  display: none;
-  background: #fff7ed;
-  border: 2px solid #fed7aa;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #c2410c;
-  margin-bottom: 12px;
+
+.song-item-trash-btn {
+  width: 28px; height: 28px; border-radius: 5px; border: none; background: transparent;
+  color: var(--text-excluded); cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0; margin-right: 4px;
 }
-.save-overwrite {
-  padding: 8px 18px;
-  border: 2px solid #ef4444;
-  background: #ef4444;
-  color: #fff;
-  font-family: 'Nunito', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.12s;
+.song-item:hover .song-item-trash-btn { opacity: 1; }
+.song-item-trash-btn:hover { color: #ef4444; }
+
+.library-trash-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--text-muted); padding: 14px 14px 6px;
 }
-.save-overwrite:hover { background: #dc2626; border-color: #dc2626; }
-.save-actions-conflict { display: none; gap: 8px; justify-content: flex-end; }
+.song-item-restore {
+  height: 22px; padding: 0 8px; margin-right: 4px; font-size: 10px; font-weight: 700; flex-shrink: 0;
+  border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer;
+}
+.song-item-restore:hover { border-color: var(--accent-green-text); color: var(--accent-green-text); }
+.song-item.trashed .song-item-name { color: var(--text-excluded); }
+
+/* + menu */
+.plus-menu {
+  position: absolute; right: 0; top: 30px; z-index: 20; width: 150px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: var(--shadow-card); overflow: hidden;
+}
+.plus-menu-item {
+  display: flex; align-items: center; gap: 7px; padding: 9px 12px; font-size: 12.5px; font-weight: 600;
+  color: var(--text-secondary); cursor: pointer;
+}
+.plus-menu-item:hover { background: var(--bg-input); color: var(--text-primary); }
 
 /* ── ACCIDENTAL TOGGLE ── */
 
@@ -1207,31 +1182,19 @@ body {
 <div class="sidebar" id="sidebar">
   <div class="sidebar-accent"></div>
   <div class="sidebar-panel" id="sidebar-panel">
-    <div class="sidebar-header">
+    <div class="sidebar-header" style="position:relative;">
       <div class="sidebar-header-icon">
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v8.5a2.5 2.5 0 1 1-2-2.449V5l6-2v7.5a2.5 2.5 0 1 1-2-2.449V3.333L9 3z"/></svg>
       </div>
       <span class="sidebar-title">Library</span>
-      <button class="sidebar-action-btn" id="btn-new" title="New (clear current notes)">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 13H3a1 1 0 01-1-1V2a1 1 0 011-1h6.5L13 4.5V12a1 1 0 01-1 1z"/><path d="M9 1v3.5H4.5"/><path d="M7 7.5v4M5 9.5h4"/>
-        </svg>
+      <button class="sidebar-action-btn" id="btn-plus" title="New / Import" onclick="event.stopPropagation();togglePlusMenu()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M7 1.5v11M1.5 7h11"/></svg>
       </button>
-      <label class="sidebar-action-btn" for="file-import" title="Import file">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M7 1v8M4 6l3 3 3-3"/><path d="M2 10v1.5A1.5 1.5 0 003.5 13h7a1.5 1.5 0 001.5-1.5V10"/>
-        </svg>
-      </label>
+      <div class="plus-menu" id="plus-menu" style="display:none">
+        <div class="plus-menu-item" id="menu-new-item">＋ New</div>
+        <label class="plus-menu-item" for="file-import">↑ Import file…</label>
+      </div>
       <input type="file" id="file-import" accept=".pdf,.txt,.tab,.pro,.chord" style="display:none">
-      <button class="sidebar-action-btn" id="btn-save" onclick="openSaveModal()" title="Save current notes">
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 13H3a1 1 0 01-1-1V2a1 1 0 011-1h6.5L13 4.5V12a1 1 0 01-1 1z"/><path d="M9 1v3.5H4.5"/><path d="M4 8.5h6M4 11h4"/>
-        </svg>
-      </button>
-    </div>
-    <div class="sidebar-current" id="sidebar-current">
-      <span class="sidebar-current-label">Now editing</span>
-      <span class="sidebar-current-name" id="sidebar-current-name"></span>
     </div>
     <div class="sidebar-list" id="drawer-list">
       <div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>
@@ -1249,23 +1212,6 @@ body {
 
 <!-- Main content -->
 <div class="main-content">
-
-<!-- Save modal -->
-<div class="save-overlay" id="save-overlay">
-  <div class="save-box">
-    <h3>Save Song</h3>
-    <input class="save-input" id="save-input" type="text" placeholder="Song name…" maxlength="80">
-    <div class="save-warn" id="save-warn"></div>
-    <div class="save-actions" id="save-actions-normal">
-      <button class="save-cancel" id="save-cancel">Cancel</button>
-      <button class="save-confirm" id="save-confirm">Save</button>
-    </div>
-    <div class="save-actions save-actions-conflict" id="save-actions-conflict">
-      <button class="save-cancel" id="save-rename">Change Name</button>
-      <button class="save-overwrite" id="save-overwrite">Overwrite</button>
-    </div>
-  </div>
-</div>
 
 <div class="wrap">
 
@@ -1554,6 +1500,7 @@ function refreshButtons() {
       chip.classList.toggle('active', chip.dataset.q === applied);
     });
   });
+  renderLibrary(); // note selection changed — keep the library's active-row in sync
 }
 
 // ── INSTRUMENT TOGGLE ─────────────────────────────────────────────────────────
@@ -1561,18 +1508,24 @@ function refreshButtons() {
 function togglePick(root, scaleName) {
   const key = `${root}:${scaleName}`;
   pickedScales.has(key) ? pickedScales.delete(key) : pickedScales.add(key);
-  if (currentSong) updateSong(currentSong.id, { scales: [...pickedScales] }).catch(() => {});
+  if (currentSong) {
+    updateSong(currentSong.id, { scales: [...pickedScales] }).catch(() => {});
+    // optimistic local update so the row's pinned-count reflects immediately,
+    // without waiting on a re-fetch round trip
+    const cached = librarySongs.find(s => s.id === currentSong.id);
+    if (cached) cached.scales = [...pickedScales];
+    renderLibrary();
+  }
   analyze();
 }
 
 function clearCurrentSong() {
-  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; updateCurrentSongDisplay(); refreshButtons(); analyze();
-  document.querySelectorAll('.song-item.active').forEach(el => el.classList.remove('active'));
+  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; pendingSongName = 'Untitled';
+  refreshButtons(); analyze(); renderLibrary();
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
 
 document.getElementById('btn-clear').addEventListener('click', clearCurrentSong);
-document.getElementById('btn-new').addEventListener('click', clearCurrentSong);
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
 
@@ -2528,23 +2481,38 @@ const API = 'http://localhost:3001/api';
 function lsGetSongs() {
   return JSON.parse(localStorage.getItem('sf_songs') || '[]');
 }
+function lsSetSongs(songs) {
+  localStorage.setItem('sf_songs', JSON.stringify(songs));
+}
 function lsGetSettings() {
   return JSON.parse(localStorage.getItem('sf_settings') || '{}');
 }
+// Mirrors the server's uniqueName() — appends " 2", " 3", etc. until the name
+// isn't taken by any song (trashed or not, matching the DB's UNIQUE constraint).
+function lsUniqueName(base, excludeId) {
+  const all = lsGetSongs();
+  let name = base, n = 2;
+  while (all.some(s => s.name === name && s.id !== excludeId)) { name = `${base} ${n}`; n++; }
+  return name;
+}
 
 async function fetchSongs() {
-  if (!IS_SERVED) return lsGetSongs();
+  if (!IS_SERVED) return lsGetSongs().filter(s => !s.trashed_at);
   const res = await fetch(`${API}/songs`);
+  return res.json();
+}
+
+async function fetchTrash() {
+  if (!IS_SERVED) return lsGetSongs().filter(s => s.trashed_at);
+  const res = await fetch(`${API}/songs/trash`);
   return res.json();
 }
 
 async function saveSong(name, notes, scales) {
   if (!IS_SERVED) {
     const songs = lsGetSongs();
-    if (songs.some(s => s.name.toLowerCase() === name.toLowerCase()))
-      throw Object.assign(new Error('duplicate'), { code: 'duplicate' });
-    const song = { id: Date.now(), name, notes, scales, created_at: new Date().toISOString() };
-    localStorage.setItem('sf_songs', JSON.stringify([song, ...songs]));
+    const song = { id: Date.now(), name: lsUniqueName(name), notes, scales, created_at: new Date().toISOString(), trashed_at: null };
+    lsSetSongs([song, ...songs]);
     return song;
   }
   const res = await fetch(`${API}/songs`, {
@@ -2552,14 +2520,13 @@ async function saveSong(name, notes, scales) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, notes, scales }),
   });
-  if (res.status === 409) throw Object.assign(new Error('duplicate'), { code: 'duplicate' });
   if (!res.ok) throw new Error('save failed');
   return res.json();
 }
 
 async function deleteSong(id) {
   if (!IS_SERVED) {
-    localStorage.setItem('sf_songs', JSON.stringify(lsGetSongs().filter(s => s.id !== id)));
+    lsSetSongs(lsGetSongs().filter(s => s.id !== id));
     return;
   }
   await fetch(`${API}/songs/${id}`, { method: 'DELETE' });
@@ -2569,14 +2536,39 @@ async function updateSong(id, patch) {
   if (!IS_SERVED) {
     const songs = lsGetSongs();
     const i = songs.findIndex(s => s.id === id);
-    if (i !== -1) { Object.assign(songs[i], patch); localStorage.setItem('sf_songs', JSON.stringify(songs)); }
+    if (i !== -1) {
+      if (patch.name !== undefined) patch = { ...patch, name: lsUniqueName(patch.name, id) };
+      Object.assign(songs[i], patch);
+      lsSetSongs(songs);
+    }
     return;
   }
-  await fetch(`${API}/songs/${id}`, {
+  const res = await fetch(`${API}/songs/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
   });
+  return res.json();
+}
+
+async function trashSong(id) {
+  if (!IS_SERVED) {
+    const songs = lsGetSongs();
+    const s = songs.find(s => s.id === id);
+    if (s) { s.trashed_at = new Date().toISOString(); lsSetSongs(songs); }
+    return;
+  }
+  await fetch(`${API}/songs/${id}/trash`, { method: 'PUT' });
+}
+
+async function restoreSong(id) {
+  if (!IS_SERVED) {
+    const songs = lsGetSongs();
+    const s = songs.find(s => s.id === id);
+    if (s) { s.trashed_at = null; s.name = lsUniqueName(s.name, id); lsSetSongs(songs); }
+    return;
+  }
+  await fetch(`${API}/songs/${id}/restore`, { method: 'PUT' });
 }
 
 async function fetchSettings() {
@@ -2599,76 +2591,158 @@ async function saveSetting(key, value) {
   });
 }
 
-// ── DRAWER ────────────────────────────────────────────────────────────────────
+// ── LIBRARY ───────────────────────────────────────────────────────────────────
+//
+// The currently-loaded (or in-progress unsaved) song is just a highlighted row
+// in this same list, with Save inline — not a separate strip duplicating it.
+// Its presence is derived from state (currentSong, or sel.size>0 with no
+// currentSong) rather than toggled by a specific button, so it always reflects
+// reality. Songs with pinned scales get a chevron to expand nested chips;
+// clicking one opens that scale directly. Deleting moves a song to a Trash
+// section (no confirmation dialog) instead of destroying it immediately.
 
-let drawerSongs = [];
+let librarySongs = [];      // cached non-trashed songs
+let libraryTrash = [];      // cached trashed songs
+let expandedSongs = new Set();
+let pendingSongName = 'Untitled'; // working title for an unsaved (no currentSong) draft
 
 function openDrawer() {
   document.getElementById('sidebar-panel').classList.remove('collapsed');
-  return loadDrawer();
+  return refreshLibrary();
 }
-
-function closeDrawer() { /* no-op */ }
 
 function toggleDrawer() {
   const panel = document.getElementById('sidebar-panel');
   const isOpen = !panel.classList.contains('collapsed');
   panel.classList.toggle('collapsed', isOpen);
-  if (!isOpen) loadDrawer();
+  if (!isOpen) refreshLibrary();
 }
 
-async function loadDrawer() {
+async function refreshLibrary() {
+  librarySongs = await fetchSongs();
+  libraryTrash = await fetchTrash();
+  renderLibrary();
+}
+
+function parseSongFields(song) {
+  const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
+  const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
+  return { notes, scales };
+}
+
+function timeSince(iso) {
+  const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (secs < 60) return 'just now';
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function renderLibrary() {
   const list = document.getElementById('drawer-list');
-  list.innerHTML = '<div class="sidebar-empty">Loading…</div>';
-  drawerSongs = await fetchSongs();
-  if (drawerSongs.length === 0) {
+  if (!list) return;
+  if (list.querySelector('.song-item-name-edit')) return; // don't clobber an in-progress rename
+
+  if (librarySongs.length === 0 && libraryTrash.length === 0 && sel.size === 0) {
     list.innerHTML = '<div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>';
     return;
   }
-  list.innerHTML = drawerSongs.map((song, idx) => {
-    const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
-    const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
-    const date       = new Date(song.created_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-    const scaleLabel = scales.length ? ` · ${scales.length} scale${scales.length > 1 ? 's' : ''}` : '';
-    return `
-    <div class="song-item" onclick="loadSong(${idx})">
-      <div class="song-item-icon">
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3v8.5a2.5 2.5 0 1 1-2-2.449V5l6-2v7.5a2.5 2.5 0 1 1-2-2.449V3.333L9 3z"/></svg>
-      </div>
+
+  let html = '';
+
+  // In-progress draft with no saved song behind it yet — always sits on top.
+  if (!currentSong && sel.size > 0) {
+    html += `
+    <div class="song-item active-row">
       <div class="song-item-body">
+        <div class="song-item-name" onclick="event.stopPropagation();startRenameActiveRow(this, null)">${pendingSongName}</div>
+      </div>
+      <button class="song-item-save" onclick="event.stopPropagation();saveActiveRow()">Save</button>
+    </div>`;
+  }
+
+  for (const song of librarySongs) {
+    const { scales } = parseSongFields(song);
+    const date = new Date(song.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const scaleLabel = scales.length ? ` · ${scales.length} scale${scales.length > 1 ? 's' : ''}` : '';
+
+    if (currentSong && currentSong.id === song.id) {
+      html += `
+      <div class="song-item active-row" data-song-id="${song.id}">
+        <div class="song-item-body">
+          <div class="song-item-name" onclick="event.stopPropagation();startRenameActiveRow(this, ${song.id})">${song.name}</div>
+          <div class="song-item-meta">${date}${scaleLabel}</div>
+        </div>
+        <button class="song-item-save" onclick="event.stopPropagation();saveActiveRow()">Save</button>
+      </div>`;
+      continue;
+    }
+
+    const hasChildren = scales.length > 0;
+    const expanded = expandedSongs.has(song.id);
+    html += `
+    <div class="song-item" data-song-id="${song.id}">
+      ${hasChildren ? `<span class="song-item-chevron${expanded ? ' expanded' : ''}" onclick="event.stopPropagation();toggleSongExpand(${song.id})">▸</span>` : ''}
+      <div class="song-item-body" onclick="loadSong(${song.id})">
         <div class="song-item-name">${song.name}</div>
         <div class="song-item-meta">${date}${scaleLabel}</div>
       </div>
-      <button class="song-item-delete" onclick="event.stopPropagation();removeSong(${song.id})" title="Delete">&#x2715;</button>
+      <button class="song-item-trash-btn" onclick="event.stopPropagation();moveToTrash(${song.id})" title="Move to Trash">🗑</button>
     </div>`;
-  }).join('');
-}
 
-function updateCurrentSongDisplay() {
-  const strip = document.getElementById('sidebar-current');
-  const name  = document.getElementById('sidebar-current-name');
-  if (currentSong) {
-    name.textContent = currentSong.name;
-    strip.classList.add('visible');
-  } else {
-    strip.classList.remove('visible');
+    if (hasChildren && expanded) {
+      html += `<div class="song-item-nested">` + scales.map(key => {
+        const sep = key.indexOf(':');
+        const root = +key.slice(0, sep);
+        const scaleName = key.slice(sep + 1);
+        return `
+        <div class="song-item-nested-row" onclick="openScaleModal(${root},'${scaleName}')">
+          <span class="nested-swatch"></span>
+          <span class="nested-name">${noteName(root)} ${scaleName}</span>
+          <span class="nested-type">scale</span>
+          <span class="nested-unpin" onclick="event.stopPropagation();unpinFromSong(${song.id},'${key}')" title="Unpin">✕</span>
+        </div>`;
+      }).join('') + `</div>`;
+    }
   }
+
+  if (libraryTrash.length > 0) {
+    html += `<div class="library-trash-title">Trash</div>`;
+    for (const song of libraryTrash) {
+      html += `
+      <div class="song-item trashed" data-song-id="${song.id}">
+        <div class="song-item-body">
+          <div class="song-item-name">${song.name}</div>
+          <div class="song-item-meta">Deleted ${timeSince(song.trashed_at)}</div>
+        </div>
+        <button class="song-item-restore" onclick="event.stopPropagation();restoreFromTrashUI(${song.id})">Restore</button>
+      </div>`;
+    }
+  }
+
+  list.innerHTML = html || '<div class="sidebar-empty">No saved songs yet.<br>Save a note set to see it here.</div>';
 }
 
-function loadSong(idx) {
-  const song   = drawerSongs[idx];
-  const notes  = typeof song.notes === 'string' ? JSON.parse(song.notes) : song.notes;
-  const scales = song.scales ? (typeof song.scales === 'string' ? JSON.parse(song.scales) : song.scales) : [];
-  currentSong  = { id: song.id, name: song.name };
-  updateCurrentSongDisplay();
+function toggleSongExpand(id) {
+  expandedSongs.has(id) ? expandedSongs.delete(id) : expandedSongs.add(id);
+  renderLibrary();
+}
+
+function loadSong(id) {
+  const song = librarySongs.find(s => s.id === id);
+  if (!song) return;
+  const { notes, scales } = parseSongFields(song);
+  currentSong = { id: song.id, name: song.name };
+  pendingSongName = 'Untitled';
   sel.clear();
   notes.forEach(n => sel.add(n));
   pickedScales.clear();
   scales.forEach(k => pickedScales.add(k));
   refreshButtons();
   analyze();
-  // highlight active song in sidebar
-  document.querySelectorAll('.song-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+  renderLibrary();
   history.replaceState(null, '', `${location.pathname}${location.search}#song=${song.id}`);
 }
 
@@ -2677,114 +2751,101 @@ function loadSong(idx) {
 // song no longer exists.
 function restoreSongFromHash() {
   const m = location.hash.match(/^#song=(\d+)$/);
-  const idx = m ? drawerSongs.findIndex(s => s.id === +m[1]) : -1;
-  if (idx === -1) {
+  const found = m ? librarySongs.some(s => s.id === +m[1]) : false;
+  if (!found) {
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
     return;
   }
-  loadSong(idx);
+  loadSong(+m[1]);
 }
 
-async function removeSong(id) {
-  await deleteSong(id);
-  loadDrawer();
-}
-
-openDrawer().then(restoreSongFromHash);
-
-// ── SAVE MODAL ────────────────────────────────────────────────────────────────
-
-let conflictId = null;
-
-function resetSaveModal() {
-  conflictId = null;
-  document.getElementById('save-warn').style.display = 'none';
-  document.getElementById('save-actions-normal').style.display = 'flex';
-  document.getElementById('save-actions-conflict').style.display = 'none';
-  document.getElementById('save-input').value = '';
-}
-
-function openSaveModal() {
-  if (sel.size === 0) { alert('Select some notes first!'); return; }
-  resetSaveModal();
-  document.getElementById('save-overlay').classList.add('open');
-  setTimeout(() => document.getElementById('save-input').focus(), 150);
-}
-
-function closeSaveModal() {
-  document.getElementById('save-overlay').classList.remove('open');
-}
-
-async function confirmSave() {
-  const name = document.getElementById('save-input').value.trim();
-  if (!name) { document.getElementById('save-input').focus(); return; }
-
-  const songs = await fetchSongs();
-  const existing = songs.find(s => s.name.toLowerCase() === name.toLowerCase());
-  if (existing) {
-    conflictId = existing.id;
-    const warn = document.getElementById('save-warn');
-    warn.textContent = `"${name}" already exists. Overwrite it or choose a different name.`;
-    warn.style.display = 'block';
-    document.getElementById('save-actions-normal').style.display = 'none';
-    document.getElementById('save-actions-conflict').style.display = 'flex';
-    return;
+async function moveToTrash(id) {
+  await trashSong(id);
+  if (currentSong && currentSong.id === id) {
+    currentSong = null;
+    history.replaceState(null, '', location.pathname + location.search);
   }
-
-  try {
-    const saved = await saveSong(name, [...sel], [...pickedScales]);
-    currentSong = { id: saved.id, name: saved.name };
-    updateCurrentSongDisplay();
-    closeSaveModal();
-    loadDrawer();
-  } catch (err) {
-    if (err.code === 'duplicate') {
-      // DB caught it (race condition) — surface the conflict UI
-      const songs = await fetchSongs();
-      const existing = songs.find(s => s.name.toLowerCase() === name.toLowerCase());
-      if (existing) conflictId = existing.id;
-      const warn = document.getElementById('save-warn');
-      warn.textContent = `"${name}" already exists. Overwrite it or choose a different name.`;
-      warn.style.display = 'block';
-      document.getElementById('save-actions-normal').style.display = 'none';
-      document.getElementById('save-actions-conflict').style.display = 'flex';
-    }
-  }
+  await refreshLibrary();
 }
 
-async function overwriteSave() {
-  const name = document.getElementById('save-input').value.trim();
-  if (conflictId) await deleteSong(conflictId);
-  conflictId = null;
-  try {
-    const saved = await saveSong(name, [...sel], [...pickedScales]);
-    currentSong = { id: saved.id, name: saved.name };
-    updateCurrentSongDisplay();
-    closeSaveModal();
-    loadDrawer();
-  } catch (err) {
-    if (err.code === 'duplicate') renameSave();
-  }
+async function restoreFromTrashUI(id) {
+  await restoreSong(id);
+  await refreshLibrary();
 }
 
-function renameSave() {
-  conflictId = null;
-  document.getElementById('save-warn').style.display = 'none';
-  document.getElementById('save-actions-normal').style.display = 'flex';
-  document.getElementById('save-actions-conflict').style.display = 'none';
-  const input = document.getElementById('save-input');
-  input.select();
+async function unpinFromSong(songId, key) {
+  const song = librarySongs.find(s => s.id === songId);
+  if (!song) return;
+  const { scales } = parseSongFields(song);
+  const updated = scales.filter(k => k !== key);
+  await updateSong(songId, { scales: updated });
+  if (currentSong && currentSong.id === songId) {
+    pickedScales.delete(key);
+    analyze();
+  }
+  await refreshLibrary();
+}
+
+// Click-to-rename: swaps the row's name for an input, focused immediately.
+// songId null means "this is the unsaved draft" — commits to pendingSongName
+// locally instead of hitting the API (nothing exists to rename yet).
+function startRenameActiveRow(nameEl, songId) {
+  const current = nameEl.textContent;
+  const input = document.createElement('input');
+  input.className = 'song-item-name-edit';
+  input.value = current === 'Untitled' ? '' : current;
+  input.placeholder = 'Untitled';
+  nameEl.replaceWith(input);
   input.focus();
+  input.select();
+  let committed = false;
+  const commit = async () => {
+    if (committed) return;
+    committed = true;
+    const val = input.value.trim() || 'Untitled';
+    input.remove(); // renderLibrary() refuses to run while this input is still in the DOM
+    if (songId) {
+      const updated = await updateSong(songId, { name: val });
+      if (currentSong && currentSong.id === songId) currentSong.name = updated.name;
+      await refreshLibrary();
+    } else {
+      pendingSongName = val;
+      renderLibrary();
+    }
+  };
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') commit().then(saveActiveRow);
+  });
 }
 
-document.getElementById('save-cancel').addEventListener('click', closeSaveModal);
-document.getElementById('save-confirm').addEventListener('click', confirmSave);
-document.getElementById('save-overwrite').addEventListener('click', overwriteSave);
-document.getElementById('save-rename').addEventListener('click', renameSave);
-document.getElementById('save-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') confirmSave();
-  if (e.key === 'Escape') closeSaveModal();
+async function saveActiveRow() {
+  if (sel.size === 0) return;
+  if (currentSong) {
+    const updated = await updateSong(currentSong.id, { notes: [...sel], scales: [...pickedScales] });
+    currentSong.name = updated.name;
+  } else {
+    const saved = await saveSong(pendingSongName, [...sel], [...pickedScales]);
+    currentSong = { id: saved.id, name: saved.name };
+    history.replaceState(null, '', `${location.pathname}${location.search}#song=${saved.id}`);
+  }
+  await refreshLibrary();
+}
+
+// + menu (New / Import)
+function togglePlusMenu() {
+  const menu = document.getElementById('plus-menu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#btn-plus, #plus-menu')) document.getElementById('plus-menu').style.display = 'none';
 });
+document.getElementById('menu-new-item').addEventListener('click', () => {
+  document.getElementById('plus-menu').style.display = 'none';
+  clearCurrentSong();
+});
+
+refreshLibrary().then(restoreSongFromHash);
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
