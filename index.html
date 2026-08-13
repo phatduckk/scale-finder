@@ -94,6 +94,7 @@ body {
 }
 
 .sidebar-panel {
+  position: relative;
   width: 240px;
   background: var(--bg-page);
   border-right: 1px solid var(--border);
@@ -464,32 +465,26 @@ body {
   padding: 32px 0;
 }
 
+/* A real heading (sentence case, primary color) — deliberately distinct from
+   .group-label below it so "C's Scales" doesn't read as a duplicate of
+   "Diatonic Modes" stacked directly underneath it. */
 .section-title {
-  font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 10px;
 }
 
 /* ── SCALE GROUPS ── */
-.scale-group { margin-bottom: 28px; }
+.scale-group { margin-bottom: 22px; }
 
 .group-label {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--text-muted);
-  padding-bottom: 0;
-  border-bottom: none;
+  color: var(--text-primary);
   margin-bottom: 12px;
-}
-.group-divider {
-  height: 1px;
-  background: var(--border);
-  margin-bottom: 20px;
 }
 
 .scale-cards {
@@ -973,7 +968,7 @@ body {
 .song-item {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 8px;
   background: transparent;
   border: none;
   border-radius: 6px;
@@ -1091,9 +1086,17 @@ body {
 .song-item-trash-btn:hover { color: #ef4444; }
 
 .library-trash-title {
+  display: flex; align-items: center; justify-content: space-between;
   font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--text-muted); padding: 14px 14px 6px;
+  color: var(--text-muted); padding: 14px 10px 6px 14px;
 }
+.library-empty-trash-btn {
+  width: 22px; height: 22px; border-radius: 5px; border: none; background: transparent;
+  color: var(--text-excluded); cursor: pointer; font-size: 11px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0; transition: opacity 0.12s;
+}
+.library-trash-title:hover .library-empty-trash-btn { opacity: 1; }
+.library-empty-trash-btn:hover { color: #ef4444; }
 .song-item-restore {
   height: 22px; padding: 0 8px; margin-right: 4px; font-size: 10px; font-weight: 700; flex-shrink: 0;
   border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); cursor: pointer;
@@ -1130,6 +1133,39 @@ body {
   line-height: 1.4;
 }
 .acc-btn.on { background: var(--accent-blue-bg); color: var(--accent-blue-text); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+
+/* ── RESULTS TABS ── */
+/* Bleeds to the card's edges (card padding is 28px 32px) so the underline
+   reads as a full-width nav bar for the card, not a control floating inside it. */
+.results-tabs {
+  display: flex;
+  gap: 22px;
+  margin: -28px -32px 18px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
+}
+.results-tab {
+  position: relative;
+  padding: 14px 2px 11px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14.5px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.results-tab:hover { color: var(--text-primary); }
+.results-tab.on { color: var(--accent-blue-text); }
+.results-tab.on::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--accent-blue-border);
+}
 
 
 /* ── ANIMATIONS ── */
@@ -1176,7 +1212,7 @@ body {
 <div class="sidebar" id="sidebar">
   <div class="sidebar-accent"></div>
   <div class="sidebar-panel" id="sidebar-panel">
-    <div class="sidebar-header" style="position:relative;">
+    <div class="sidebar-header">
       <div class="sidebar-header-icon">
         <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v8.5a2.5 2.5 0 1 1-2-2.449V5l6-2v7.5a2.5 2.5 0 1 1-2-2.449V3.333L9 3z"/></svg>
       </div>
@@ -1232,9 +1268,9 @@ body {
 
   <!-- RESULTS -->
   <div class="card">
-    <div class="acc-tog" id="results-view-tog" style="margin-bottom:16px;">
-      <button class="acc-btn results-view-btn on" data-view="scales" onclick="setResultsView('scales')">Scales</button>
-      <button class="acc-btn results-view-btn"    data-view="chords" onclick="setResultsView('chords')">Chords</button>
+    <div class="results-tabs" id="results-view-tog">
+      <button class="results-tab results-view-btn on" data-view="scales" onclick="setResultsView('scales')">Scales</button>
+      <button class="results-tab results-view-btn"    data-view="chords" onclick="setResultsView('chords')">Chords</button>
     </div>
     <div id="results-content">
       <div class="empty-msg">Pick some notes above to get started</div>
@@ -1502,6 +1538,9 @@ function refreshButtons() {
 function togglePick(root, scaleName) {
   const key = `${root}:${scaleName}`;
   pickedScales.has(key) ? pickedScales.delete(key) : pickedScales.add(key);
+  // A pin is only worth showing if its row's accordion is actually open —
+  // force it open so the pin is never invisible after the click that made it.
+  if (pickedScales.size > 0) expandedSongs.add(currentSong ? currentSong.id : 'draft');
   if (currentSong) {
     updateSong(currentSong.id, { scales: [...pickedScales] }).catch(() => {});
     // optimistic local update so the row's pinned-count and Save-button
@@ -1509,15 +1548,27 @@ function togglePick(root, scaleName) {
     const cached = librarySongs.find(s => s.id === currentSong.id);
     if (cached) cached.scales = [...pickedScales];
     savedSnapshot = snapshotKey();
-    renderLibrary();
   }
+  renderLibrary();
   analyze();
 }
 
 function clearCurrentSong() {
-  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; pendingSongName = 'Untitled'; savedSnapshot = null; expandedSongs.clear();
+  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; pendingSongName = 'Untitled'; draftNameTyped = false; draftStarted = false; savedSnapshot = null; expandedSongs.clear();
   refreshButtons(); analyze(); renderLibrary();
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+}
+
+// "+ New": a clear plus an explicit signal of intent — unlike the plain Clear
+// button, this shows the draft row (and its rename field) right away, before
+// any notes are picked, so it reads as "starting a new song" rather than
+// just wiping the note picker.
+function startNewSong() {
+  clearCurrentSong();
+  draftStarted = true;
+  renderLibrary();
+  const nameEl = document.querySelector('#drawer-list .song-item.active-row .song-item-name');
+  if (nameEl) startRenameActiveRow(nameEl, null);
 }
 
 document.getElementById('btn-clear').addEventListener('click', clearCurrentSong);
@@ -1585,7 +1636,6 @@ function analyze() {
     // Chord reference is only meaningful with exactly one note selected —
     // guitar-only content by nature, independent of the modal's instrument setting.
     if (singleNote) {
-      html += `<div class="section-title" style="margin-bottom:10px">${noteName(input[0])}'s Chords</div>`;
       html += `<div class="scale-cards">`;
       CHORD_DISPLAY_ORDER.forEach(q => { html += buildChordCard(input[0], q); });
       html += `</div>`;
@@ -1597,10 +1647,9 @@ function analyze() {
     if (singleNote) {
       const rooted   = matches.filter(m => m.root === input[0]);
       const relative = matches.filter(m => m.root !== input[0]);
-      html += `<div class="section-title" style="margin:18px 0 4px">${noteName(input[0])}'s Scales</div>`;
       html += renderScaleGroups(rooted, input);
       if (relative.length) {
-        html += `<div class="section-title" style="margin:18px 0 4px">Relative Keys <span style="opacity:.55;font-weight:600;font-size:11px;">(also contain ${noteName(input[0])})</span></div>`;
+        html += `<div class="section-title" style="margin-top:26px">Relative Keys <span style="opacity:.55;font-weight:600;font-size:11px;">(also contain ${noteName(input[0])})</span></div>`;
         html += renderScaleGroups(relative, input);
       }
     } else {
@@ -1624,7 +1673,7 @@ function renderScaleGroups(matchList, input) {
   for (const type of GROUP_ORDER) {
     const group = byType[type];
     if (!group || group.length === 0) continue;
-    html += `<div class="scale-group"><div class="group-label">${GROUP_LABELS[type]}</div><div class="group-divider"></div><div class="scale-cards">`;
+    html += `<div class="scale-group"><div class="group-label">${GROUP_LABELS[type]}</div><div class="scale-cards">`;
     group.forEach((m, idx) => { html += buildCard(m, input, idx); });
     html += `</div></div>`;
   }
@@ -2572,6 +2621,8 @@ let librarySongs = [];      // cached non-trashed songs
 let libraryTrash = [];      // cached trashed songs
 let expandedSongs = new Set();
 let pendingSongName = 'Untitled'; // working title for an unsaved (no currentSong) draft
+let draftNameTyped = false; // true once the user has actually typed a draft name — Save refuses to persist the untouched "Untitled" placeholder
+let draftStarted = false; // true after "+New" — shows the draft row (and its rename field) before any notes are picked, so New reads as "start a song" not just "clear notes"
 
 function openDrawer() {
   document.getElementById('sidebar-panel').classList.remove('collapsed');
@@ -2656,7 +2707,7 @@ function renderLibrary() {
 
   // In-progress draft with no saved song behind it yet — always sits on top.
   // Nothing to trash yet, so no trash button here.
-  if (!currentSong && sel.size > 0) {
+  if (!currentSong && (sel.size > 0 || draftStarted)) {
     const pinned = [...pickedScales];
     const expanded = expandedSongs.has('draft');
     html += `
@@ -2711,7 +2762,7 @@ function renderLibrary() {
   }
 
   if (libraryTrash.length > 0) {
-    html += `<div class="library-trash-title">Trash</div>`;
+    html += `<div class="library-trash-title">Trash<button class="library-empty-trash-btn" onclick="event.stopPropagation();emptyTrash()" title="Empty Trash">🗑</button></div>`;
     for (const song of libraryTrash) {
       html += `
       <div class="song-item trashed" data-song-id="${song.id}">
@@ -2753,6 +2804,8 @@ function loadSong(id) {
   const { notes, scales } = parseSongFields(song);
   currentSong = { id: song.id, name: song.name };
   pendingSongName = 'Untitled';
+  draftNameTyped = false;
+  draftStarted = false;
   sel.clear();
   notes.forEach(n => sel.add(n));
   pickedScales.clear();
@@ -2792,6 +2845,13 @@ async function restoreFromTrashUI(id) {
   await refreshLibrary();
 }
 
+async function emptyTrash() {
+  if (libraryTrash.length === 0) return;
+  if (!confirm(`Permanently delete ${libraryTrash.length} song${libraryTrash.length > 1 ? 's' : ''} from Trash? This can't be undone.`)) return;
+  await Promise.all(libraryTrash.map(s => deleteSong(s.id)));
+  await refreshLibrary();
+}
+
 async function unpinFromSong(songId, key) {
   const song = librarySongs.find(s => s.id === songId);
   if (!song) return;
@@ -2808,7 +2868,10 @@ async function unpinFromSong(songId, key) {
 // Click-to-rename: swaps the row's name for an input, focused immediately.
 // songId null means "this is the unsaved draft" — commits to pendingSongName
 // locally instead of hitting the API (nothing exists to rename yet).
-function startRenameActiveRow(nameEl, songId) {
+// andSave means this rename exists only to unblock a Save click that was
+// refused for an untyped name — finish that save however the rename ends
+// (blur is the common case; Enter still works too), not just on Enter.
+function startRenameActiveRow(nameEl, songId, andSave = false) {
   const current = nameEl.textContent;
   const input = document.createElement('input');
   input.className = 'song-item-name-edit';
@@ -2821,7 +2884,8 @@ function startRenameActiveRow(nameEl, songId) {
   const commit = async () => {
     if (committed) return;
     committed = true;
-    const val = input.value.trim() || 'Untitled';
+    const typed = input.value.trim();
+    const val = typed || 'Untitled';
     input.remove(); // renderLibrary() refuses to run while this input is still in the DOM
     if (songId) {
       const updated = await updateSong(songId, { name: val });
@@ -2829,12 +2893,16 @@ function startRenameActiveRow(nameEl, songId) {
       await refreshLibrary();
     } else {
       pendingSongName = val;
+      if (typed) draftNameTyped = true; // an untouched blur still defaults to 'Untitled' but doesn't count as naming it
       renderLibrary();
+      if (andSave && typed) await saveActiveRow();
     }
   };
   input.addEventListener('blur', commit);
   input.addEventListener('keydown', ev => {
-    if (ev.key === 'Enter') commit().then(saveActiveRow);
+    // andSave's draft case already saves from inside commit() above — chaining
+    // saveActiveRow here too would fire a second, redundant save call.
+    if (ev.key === 'Enter') { if (songId === null && andSave) commit(); else commit().then(saveActiveRow); }
   });
 }
 
@@ -2843,11 +2911,23 @@ async function saveActiveRow() {
   if (currentSong) {
     const updated = await updateSong(currentSong.id, { notes: [...sel], scales: [...pickedScales] });
     currentSong.name = updated.name;
-  } else {
-    const saved = await saveSong(pendingSongName, [...sel], [...pickedScales]);
-    currentSong = { id: saved.id, name: saved.name };
-    history.replaceState(null, '', `${location.pathname}${location.search}#song=${saved.id}`);
+    savedSnapshot = snapshotKey();
+    await refreshLibrary();
+    return;
   }
+  if (!draftNameTyped) {
+    // Refuse to save the untouched "Untitled" placeholder — force a real
+    // name first, then re-run this same save once it's committed.
+    const nameEl = document.querySelector('#drawer-list .song-item.active-row .song-item-name');
+    if (nameEl) startRenameActiveRow(nameEl, null, true);
+    return;
+  }
+  const saved = await saveSong(pendingSongName, [...sel], [...pickedScales]);
+  currentSong = { id: saved.id, name: saved.name };
+  // The draft's accordion state was tracked under the 'draft' key — carry it
+  // over to the song's real id so saving doesn't visually collapse it.
+  if (expandedSongs.has('draft')) { expandedSongs.delete('draft'); expandedSongs.add(saved.id); }
+  history.replaceState(null, '', `${location.pathname}${location.search}#song=${saved.id}`);
   savedSnapshot = snapshotKey();
   await refreshLibrary();
 }
@@ -2862,7 +2942,7 @@ document.addEventListener('click', e => {
 });
 document.getElementById('menu-new-item').addEventListener('click', () => {
   document.getElementById('plus-menu').style.display = 'none';
-  clearCurrentSong();
+  startNewSong();
 });
 
 refreshLibrary().then(restoreSongFromHash);
