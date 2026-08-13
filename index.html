@@ -1282,10 +1282,6 @@ body {
           <path d="M1.5 3.5h10M4.5 3.5V2.5A.75.75 0 015.25 1.75h2.5A.75.75 0 018.5 2.5v1M3 3.5l.75 7a.75.75 0 00.748.75h4a.75.75 0 00.748-.75L10 3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
-      <div class="acc-tog" id="main-inst-tog" style="margin-left:10px;">
-        <button class="acc-btn main-inst-btn" data-inst="guitar" onclick="setInstrument('guitar')">Guitar</button>
-        <button class="acc-btn main-inst-btn" data-inst="bass"   onclick="setInstrument('bass')">Bass</button>
-      </div>
       <div class="acc-tog" id="main-acc-tog" style="margin-left:10px;">
         <button class="acc-btn" id="acc-sharp" onclick="setAccidental(false)">#</button>
         <button class="acc-btn" id="acc-flat" onclick="setAccidental(true)">♭</button>
@@ -1296,6 +1292,10 @@ body {
 
   <!-- RESULTS -->
   <div class="card">
+    <div class="acc-tog" id="results-view-tog" style="margin-bottom:16px;">
+      <button class="acc-btn results-view-btn on" data-view="scales" onclick="setResultsView('scales')">Scales</button>
+      <button class="acc-btn results-view-btn"    data-view="chords" onclick="setResultsView('chords')">Chords</button>
+    </div>
     <div id="results-content">
       <div class="empty-msg">Pick some notes above to get started</div>
     </div>
@@ -1426,7 +1426,8 @@ let currentSong = null;         // { id, name } of the loaded song, if any
 let chordRootFreq = new Map();  // noteIdx -> how many times it appeared as chord root
 let firstChordRoot = null;      // root note of the very first chord parsed (likely the tonic)
 let appliedChords = new Map();  // noteIdx -> chord quality applied via popover
-let instrument = 'guitar'; // app-wide: drives the fretboard's strings and whether chords are shown
+let instrument = 'guitar'; // drives the scale modal's default fretboard strings
+let resultsView = 'scales'; // 'scales' | 'chords' — which results section is showing
 let modalView = 'all'; // 'all' | 'position'
 let anchorNote = null; // { stringIdx, fret, direction: 1 | -1 } — click-to-anchor run, overrides modalView when set
 let modalRoot = 0;
@@ -1603,7 +1604,7 @@ function buildMyScales(input = [], matches = []) {
 function analyze() {
   const content = document.getElementById('results-content');
   if (sel.size === 0) {
-    content.innerHTML = buildMyScales([]) + '<div class="empty-msg">Pick some notes above to get started</div>';
+    content.innerHTML = (resultsView === 'chords' ? '' : buildMyScales([])) + '<div class="empty-msg">Pick some notes above to get started</div>';
     return;
   }
 
@@ -1644,7 +1645,9 @@ function analyze() {
   });
 
   if (matches.length === 0) {
-    content.innerHTML = '<div class="empty-msg">No standard scales match these notes</div>';
+    content.innerHTML = resultsView === 'chords'
+      ? '<div class="empty-msg">Select a single note to see its chords</div>'
+      : '<div class="empty-msg">No standard scales match these notes</div>';
     return;
   }
 
@@ -1653,30 +1656,36 @@ function analyze() {
   // merely happen to contain it" (e.g. C's own scales before A minor pentatonic).
   const singleNote = input.length === 1;
 
-  // 1. My Scales (full cards)
-  let html = buildMyScales(input, matches);
+  let html = '';
 
-  // 2. Chord reference — only meaningful with exactly one note selected, and
-  // only for guitar (these are strummed voicings, not something bass plays)
-  if (singleNote && instrument === 'guitar') {
-    html += `<div class="section-title" style="margin:18px 0 10px">${noteName(input[0])}'s Chords</div>`;
-    html += `<div class="scale-cards">`;
-    CHORD_DISPLAY_ORDER.forEach(q => { html += buildChordCard(input[0], q); });
-    html += `</div>`;
-  }
-
-  // 3. Scale groups by type
-  if (singleNote) {
-    const rooted   = matches.filter(m => m.root === input[0]);
-    const relative = matches.filter(m => m.root !== input[0]);
-    html += `<div class="section-title" style="margin:18px 0 4px">${noteName(input[0])}'s Scales</div>`;
-    html += renderScaleGroups(rooted, input);
-    if (relative.length) {
-      html += `<div class="section-title" style="margin:18px 0 4px">Relative Keys <span style="opacity:.55;font-weight:600;font-size:11px;">(also contain ${noteName(input[0])})</span></div>`;
-      html += renderScaleGroups(relative, input);
+  if (resultsView === 'chords') {
+    // Chord reference is only meaningful with exactly one note selected —
+    // guitar-only content by nature, independent of the modal's instrument setting.
+    if (singleNote) {
+      html += `<div class="section-title" style="margin-bottom:10px">${noteName(input[0])}'s Chords</div>`;
+      html += `<div class="scale-cards">`;
+      CHORD_DISPLAY_ORDER.forEach(q => { html += buildChordCard(input[0], q); });
+      html += `</div>`;
+    } else {
+      html += `<div class="empty-msg">Select a single note to see its chords</div>`;
     }
   } else {
-    html += renderScaleGroups(matches, input);
+    // My Scales (pinned)
+    html += buildMyScales(input, matches);
+
+    // Scale groups by type
+    if (singleNote) {
+      const rooted   = matches.filter(m => m.root === input[0]);
+      const relative = matches.filter(m => m.root !== input[0]);
+      html += `<div class="section-title" style="margin:18px 0 4px">${noteName(input[0])}'s Scales</div>`;
+      html += renderScaleGroups(rooted, input);
+      if (relative.length) {
+        html += `<div class="section-title" style="margin:18px 0 4px">Relative Keys <span style="opacity:.55;font-weight:600;font-size:11px;">(also contain ${noteName(input[0])})</span></div>`;
+        html += renderScaleGroups(relative, input);
+      }
+    } else {
+      html += renderScaleGroups(matches, input);
+    }
   }
 
   content.innerHTML = html;
@@ -2199,8 +2208,9 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
 });
 
-// Instrument is app-wide — the main-page and in-modal toggles are two views of
-// the same setting, so both go through here and stay in sync.
+// Instrument now only controls the scale modal's fretboard (which strings to
+// show) — it no longer gates anything on the results page, since that's what
+// the Scales/Chords tabs are for.
 function setInstrument(inst) {
   if (inst !== 'guitar' && inst !== 'bass') return;
   instrument = inst;
@@ -2211,17 +2221,24 @@ function setInstrument(inst) {
   if (scale && document.getElementById('modal-overlay').classList.contains('open')) {
     renderFretboard(modalRoot, scale);
   }
-  analyze(); // chords are guitar-only, so the results need rebuilding
 }
 
 function syncInstrumentButtons() {
-  document.querySelectorAll('.main-inst-btn').forEach(b => b.classList.toggle('on', b.dataset.inst === instrument));
   document.querySelectorAll('.modal-inst-btn').forEach(b => b.classList.toggle('on', b.dataset.minst === instrument));
 }
 
 document.querySelectorAll('.modal-inst-btn').forEach(b => {
   b.addEventListener('click', () => setInstrument(b.dataset.minst));
 });
+
+// Scales/Chords tab — which section of the results renders.
+function setResultsView(view) {
+  if (view !== 'scales' && view !== 'chords') return;
+  resultsView = view;
+  document.querySelectorAll('.results-view-btn').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+  saveSetting('resultsView', resultsView).catch(() => {});
+  analyze();
+}
 
 // Modal view toggle (all notes vs. single lesson-book position)
 document.querySelectorAll('.modal-view-btn').forEach(b => {
@@ -2779,6 +2796,10 @@ fetchSettings().then(s => {
     instrument = s.instrument;
   }
   syncInstrumentButtons();
+  if (s.resultsView === 'chords') {
+    resultsView = 'chords';
+    document.querySelectorAll('.results-view-btn').forEach(b => b.classList.toggle('on', b.dataset.view === 'chords'));
+  }
   if (s.scaleView === 'position') {
     modalView = 'position';
   }
