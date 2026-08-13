@@ -1129,15 +1129,6 @@ body {
 .acc-btn.on { background: var(--accent-blue-bg); color: var(--accent-blue-text); box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
 
-/* ── MY SCALES ── */
-.my-scales-section { margin-bottom: 28px; }
-.picked-hint {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-muted);
-  padding: 4px 0;
-}
-
 /* ── ANIMATIONS ── */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(6px); }
@@ -1510,17 +1501,18 @@ function togglePick(root, scaleName) {
   pickedScales.has(key) ? pickedScales.delete(key) : pickedScales.add(key);
   if (currentSong) {
     updateSong(currentSong.id, { scales: [...pickedScales] }).catch(() => {});
-    // optimistic local update so the row's pinned-count reflects immediately,
-    // without waiting on a re-fetch round trip
+    // optimistic local update so the row's pinned-count and Save-button
+    // visibility reflect immediately, without waiting on a re-fetch round trip
     const cached = librarySongs.find(s => s.id === currentSong.id);
     if (cached) cached.scales = [...pickedScales];
+    savedSnapshot = snapshotKey();
     renderLibrary();
   }
   analyze();
 }
 
 function clearCurrentSong() {
-  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; pendingSongName = 'Untitled';
+  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; pendingSongName = 'Untitled'; savedSnapshot = null;
   refreshButtons(); analyze(); renderLibrary();
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
@@ -1529,35 +1521,10 @@ document.getElementById('btn-clear').addEventListener('click', clearCurrentSong)
 
 // ── ANALYSIS ──────────────────────────────────────────────────────────────────
 
-function buildMyScales(input = [], matches = []) {
-  if (pickedScales.size === 0) {
-    return `<div class="my-scales-section"><div class="picked-hint">Hit + on any scale card to pin your picks here</div></div>`;
-  }
-  let cards = '';
-  for (const key of pickedScales) {
-    const sep = key.indexOf(':');
-    const root = +key.slice(0, sep);
-    const scaleName = key.slice(sep + 1);
-    let m = matches.find(x => x.root === root && x.scale.name === scaleName);
-    if (!m) {
-      const scale = SCALES.find(s => s.name === scaleName);
-      if (!scale) continue;
-      const scaleSet = scale.iv.map(iv => (root + iv) % 12);
-      const matched = input.filter(n => scaleSet.includes(n)).length;
-      m = { root, scale, scaleSet, coverage: matched / scale.iv.length, matched };
-    }
-    cards += buildCard(m, input, 0);
-  }
-  return `<div class="my-scales-section">
-    <div class="section-title" style="margin-bottom:10px">My Scales</div>
-    <div class="scale-cards">${cards}</div>
-  </div>`;
-}
-
 function analyze() {
   const content = document.getElementById('results-content');
   if (sel.size === 0) {
-    content.innerHTML = (resultsView === 'chords' ? '' : buildMyScales([])) + '<div class="empty-msg">Pick some notes above to get started</div>';
+    content.innerHTML = '<div class="empty-msg">Pick some notes above to get started</div>';
     return;
   }
 
@@ -1623,9 +1590,6 @@ function analyze() {
       html += `<div class="empty-msg">Select a single note to see its chords</div>`;
     }
   } else {
-    // My Scales (pinned)
-    html += buildMyScales(input, matches);
-
     // Scale groups by type
     if (singleNote) {
       const rooted   = matches.filter(m => m.root === input[0]);
@@ -2640,6 +2604,37 @@ function timeSince(iso) {
   return `${Math.floor(hrs / 24)}d ago`;
 }
 
+// Renders pinned-scale chips for a row. unpinFn is the exact onclick body to
+// unpinCall(key) builds the exact onclick body for a chip's ✕ — active rows
+// unpin against the live working set, saved-but-inactive rows unpin against
+// that song's persisted scales, so the call differs per row type.
+function renderNestedScales(keys, unpinCall) {
+  if (!keys.length) return '';
+  return `<div class="song-item-nested">` + keys.map(key => {
+    const sep = key.indexOf(':');
+    const root = +key.slice(0, sep);
+    const scaleName = key.slice(sep + 1);
+    return `
+    <div class="song-item-nested-row" onclick="openScaleModal(${root},'${scaleName}')">
+      <span class="nested-swatch"></span>
+      <span class="nested-name">${noteName(root)} ${scaleName}</span>
+      <span class="nested-type">scale</span>
+      <span class="nested-unpin" onclick="event.stopPropagation();${unpinCall(key)}" title="Unpin">✕</span>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+// The active row's baseline is "what's actually saved" — anything live sel/
+// pickedScales differs from that is unsaved, which is the only time Save
+// needs to show at all.
+let savedSnapshot = null;
+function snapshotKey() {
+  return JSON.stringify({ notes: [...sel].sort((a, b) => a - b), scales: [...pickedScales].sort() });
+}
+function isDirty() {
+  return currentSong ? savedSnapshot !== snapshotKey() : sel.size > 0;
+}
+
 function renderLibrary() {
   const list = document.getElementById('drawer-list');
   if (!list) return;
@@ -2651,35 +2646,45 @@ function renderLibrary() {
   }
 
   let html = '';
+  const saveBtn = isDirty() ? `<button class="song-item-save" onclick="event.stopPropagation();saveActiveRow()">Save</button>` : '';
 
   // In-progress draft with no saved song behind it yet — always sits on top.
   if (!currentSong && sel.size > 0) {
+    const pinned = [...pickedScales];
+    const expanded = expandedSongs.has('draft');
     html += `
     <div class="song-item active-row">
+      ${pinned.length ? `<span class="song-item-chevron${expanded ? ' expanded' : ''}" onclick="event.stopPropagation();toggleSongExpand('draft')">▸</span>` : ''}
       <div class="song-item-body">
         <div class="song-item-name" onclick="event.stopPropagation();startRenameActiveRow(this, null)">${pendingSongName}</div>
       </div>
-      <button class="song-item-save" onclick="event.stopPropagation();saveActiveRow()">Save</button>
+      ${saveBtn}
     </div>`;
+    if (pinned.length && expanded) html += renderNestedScales(pinned, key => `unpinFromActiveRow('${key}')`);
   }
 
   for (const song of librarySongs) {
     const { scales } = parseSongFields(song);
     const date = new Date(song.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const scaleLabel = scales.length ? ` · ${scales.length} scale${scales.length > 1 ? 's' : ''}` : '';
 
     if (currentSong && currentSong.id === song.id) {
+      const pinned = [...pickedScales];
+      const scaleLabel = pinned.length ? ` · ${pinned.length} scale${pinned.length > 1 ? 's' : ''}` : '';
+      const expanded = expandedSongs.has(song.id);
       html += `
       <div class="song-item active-row" data-song-id="${song.id}">
+        ${pinned.length ? `<span class="song-item-chevron${expanded ? ' expanded' : ''}" onclick="event.stopPropagation();toggleSongExpand(${song.id})">▸</span>` : ''}
         <div class="song-item-body">
           <div class="song-item-name" onclick="event.stopPropagation();startRenameActiveRow(this, ${song.id})">${song.name}</div>
           <div class="song-item-meta">${date}${scaleLabel}</div>
         </div>
-        <button class="song-item-save" onclick="event.stopPropagation();saveActiveRow()">Save</button>
+        ${saveBtn}
       </div>`;
+      if (pinned.length && expanded) html += renderNestedScales(pinned, key => `unpinFromActiveRow('${key}')`);
       continue;
     }
 
+    const scaleLabel = scales.length ? ` · ${scales.length} scale${scales.length > 1 ? 's' : ''}` : '';
     const hasChildren = scales.length > 0;
     const expanded = expandedSongs.has(song.id);
     html += `
@@ -2693,18 +2698,7 @@ function renderLibrary() {
     </div>`;
 
     if (hasChildren && expanded) {
-      html += `<div class="song-item-nested">` + scales.map(key => {
-        const sep = key.indexOf(':');
-        const root = +key.slice(0, sep);
-        const scaleName = key.slice(sep + 1);
-        return `
-        <div class="song-item-nested-row" onclick="openScaleModal(${root},'${scaleName}')">
-          <span class="nested-swatch"></span>
-          <span class="nested-name">${noteName(root)} ${scaleName}</span>
-          <span class="nested-type">scale</span>
-          <span class="nested-unpin" onclick="event.stopPropagation();unpinFromSong(${song.id},'${key}')" title="Unpin">✕</span>
-        </div>`;
-      }).join('') + `</div>`;
+      html += renderNestedScales(scales, key => `unpinFromSong(${song.id},'${key}')`);
     }
   }
 
@@ -2730,6 +2724,21 @@ function toggleSongExpand(id) {
   renderLibrary();
 }
 
+// Unpins against the live working set (used by the active row, whether that's
+// a loaded song or an unsaved draft) — persists immediately if there's a
+// currentSong to persist to.
+async function unpinFromActiveRow(key) {
+  pickedScales.delete(key);
+  analyze();
+  if (currentSong) {
+    await updateSong(currentSong.id, { scales: [...pickedScales] });
+    const cached = librarySongs.find(s => s.id === currentSong.id);
+    if (cached) cached.scales = [...pickedScales];
+    savedSnapshot = snapshotKey();
+  }
+  renderLibrary();
+}
+
 function loadSong(id) {
   const song = librarySongs.find(s => s.id === id);
   if (!song) return;
@@ -2740,6 +2749,7 @@ function loadSong(id) {
   notes.forEach(n => sel.add(n));
   pickedScales.clear();
   scales.forEach(k => pickedScales.add(k));
+  savedSnapshot = snapshotKey();
   refreshButtons();
   analyze();
   renderLibrary();
@@ -2829,6 +2839,7 @@ async function saveActiveRow() {
     currentSong = { id: saved.id, name: saved.name };
     history.replaceState(null, '', `${location.pathname}${location.search}#song=${saved.id}`);
   }
+  savedSnapshot = snapshotKey();
   await refreshLibrary();
 }
 
