@@ -1053,7 +1053,7 @@ body {
    tint (both themes) — use the same green as its name text instead */
 .song-item.active-row .song-item-chevron { color: var(--accent-green-text); }
 
-.song-item-nested { padding: 2px 6px 4px 32px; display: flex; flex-direction: column; gap: 1px; }
+.song-item-nested { padding: 2px 6px 4px 20px; display: flex; flex-direction: column; gap: 1px; }
 .song-item-nested-row {
   display: flex; align-items: center; gap: 7px; padding: 5px 6px; border-radius: 5px;
   font-size: 12px; font-weight: 600; color: var(--text-secondary); cursor: pointer;
@@ -2650,16 +2650,20 @@ function renderLibrary() {
 
   let html = '';
   const saveBtn = isDirty() ? `<button class="song-item-save" onclick="event.stopPropagation();saveActiveRow()">Save</button>` : '';
+  // Double-clicking anywhere on an active row (not just the name) starts a
+  // rename — a plain click no longer does, so it can't be triggered by accident.
+  const dblclickRename = songId => `ondblclick="event.stopPropagation();startRenameActiveRow(this.querySelector('.song-item-name'), ${songId})"`;
 
   // In-progress draft with no saved song behind it yet — always sits on top.
+  // Nothing to trash yet, so no trash button here.
   if (!currentSong && sel.size > 0) {
     const pinned = [...pickedScales];
     const expanded = expandedSongs.has('draft');
     html += `
-    <div class="song-item active-row">
+    <div class="song-item active-row" ${dblclickRename('null')}>
       ${pinned.length ? `<span class="song-item-chevron${expanded ? ' expanded' : ''}" onclick="event.stopPropagation();toggleSongExpand('draft')">▸</span>` : ''}
       <div class="song-item-body">
-        <div class="song-item-name" onclick="event.stopPropagation();startRenameActiveRow(this, null)">${pendingSongName}</div>
+        <div class="song-item-name">${pendingSongName}</div>
       </div>
       ${saveBtn}
     </div>`;
@@ -2675,13 +2679,14 @@ function renderLibrary() {
       const scaleLabel = pinned.length ? ` · ${pinned.length} scale${pinned.length > 1 ? 's' : ''}` : '';
       const expanded = expandedSongs.has(song.id);
       html += `
-      <div class="song-item active-row" data-song-id="${song.id}">
+      <div class="song-item active-row" data-song-id="${song.id}" ${dblclickRename(song.id)}>
         ${pinned.length ? `<span class="song-item-chevron${expanded ? ' expanded' : ''}" onclick="event.stopPropagation();toggleSongExpand(${song.id})">▸</span>` : ''}
         <div class="song-item-body">
-          <div class="song-item-name" onclick="event.stopPropagation();startRenameActiveRow(this, ${song.id})">${song.name}</div>
+          <div class="song-item-name">${song.name}</div>
           <div class="song-item-meta">${date}${scaleLabel}</div>
         </div>
         ${saveBtn}
+        <button class="song-item-trash-btn" onclick="event.stopPropagation();moveToTrash(${song.id})" title="Move to Trash">🗑</button>
       </div>`;
       if (pinned.length && expanded) html += renderNestedScales(pinned, key => `unpinFromActiveRow('${key}')`);
       continue;
@@ -2752,6 +2757,7 @@ function loadSong(id) {
   notes.forEach(n => sel.add(n));
   pickedScales.clear();
   scales.forEach(k => pickedScales.add(k));
+  expandedSongs = scales.length ? new Set([song.id]) : new Set();
   savedSnapshot = snapshotKey();
   refreshButtons();
   analyze();
