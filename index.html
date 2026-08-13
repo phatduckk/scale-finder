@@ -1515,7 +1515,7 @@ function togglePick(root, scaleName) {
 }
 
 function clearCurrentSong() {
-  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; pendingSongName = 'Untitled'; savedSnapshot = null;
+  sel.clear(); pickedScales.clear(); chordRootFreq.clear(); firstChordRoot = null; appliedChords.clear(); currentSong = null; pendingSongName = 'Untitled'; savedSnapshot = null; expandedSongs.clear();
   refreshButtons(); analyze(); renderLibrary();
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
 }
