@@ -464,9 +464,6 @@ body {
   padding: 32px 0;
 }
 
-/* ── KEY CHIPS ── */
-.key-section { margin-bottom: 28px; }
-
 .section-title {
   font-size: 13px;
   font-weight: 700;
@@ -475,21 +472,6 @@ body {
   color: var(--text-muted);
   margin-bottom: 12px;
 }
-
-.chips { display: flex; flex-wrap: wrap; gap: 10px; }
-
-.chip {
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 700;
-  background: var(--bg-input);
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-}
-.chip { cursor: pointer; }
-.chip.top { background: var(--accent-purple-bg); color: var(--accent-purple-text); border-color: var(--accent-purple-border); }
-.chip.top:first-child { background: var(--accent-blue-bg); color: var(--accent-blue-text); border-color: var(--accent-blue-border); }
 
 /* ── SCALE GROUPS ── */
 .scale-group { margin-bottom: 28px; }
@@ -1641,31 +1623,11 @@ function analyze() {
   // it's "show me this note's own scales first, then the relative keys that
   // merely happen to contain it" (e.g. C's own scales before A minor pentatonic).
   const singleNote = input.length === 1;
-  const orderedMatches = singleNote
-    ? [...matches.filter(m => m.root === input[0]), ...matches.filter(m => m.root !== input[0])]
-    : matches;
 
-  const topKeys = [];
-  const seenKeys = new Set();
-  for (const m of orderedMatches) {
-    const k = `${m.root}:${m.scale.name}`;
-    if (!seenKeys.has(k)) { seenKeys.add(k); topKeys.push(m); }
-    if (topKeys.length >= 8) break;
-  }
+  // 1. My Scales (full cards)
+  let html = buildMyScales(input, matches);
 
-  // 1. Suggested Keys
-  let html = `<div class="key-section"><div class="section-title" style="margin-bottom:10px">Suggested Keys</div><div class="chips">`;
-  topKeys.forEach((m, i) => {
-    const cls = 'chip' + (i < 3 ? ' top' : '');
-    const alias = m.scale.alias ? ` <span style="opacity:.55;font-weight:600;font-size:10px;">(${m.scale.alias})</span>` : '';
-    html += `<div class="${cls}" onclick="openScaleModal(${m.root},'${m.scale.name}')" style="cursor:pointer">${noteName(m.root)} ${m.scale.name}${alias}</div>`;
-  });
-  html += '</div></div>';
-
-  // 2. My Scales (full cards)
-  html += buildMyScales(input, matches);
-
-  // 3. Scale groups by type
+  // 2. Scale groups by type
   if (singleNote) {
     const rooted   = matches.filter(m => m.root === input[0]);
     const relative = matches.filter(m => m.root !== input[0]);
