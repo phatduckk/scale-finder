@@ -1583,6 +1583,30 @@ function analyze() {
   }
 
   const input = [...sel];
+  // With a single note picked, "what key is this song in" isn't the question —
+  // it's "show me this note's own scales first, then the relative keys that
+  // merely happen to contain it" (e.g. C's own scales before A minor pentatonic).
+  const singleNote = input.length === 1;
+
+  if (resultsView === 'chords') {
+    let html;
+    if (singleNote) {
+      // A single note browses every quality built on it — guitar-only content
+      // by nature, independent of the modal's instrument setting.
+      html = `<div class="scale-cards">` + CHORD_DISPLAY_ORDER.map(q => buildChordCard(input[0], q)).join('') + `</div>`;
+    } else {
+      // Multiple notes: show chords your selection fits inside (e.g. C+E+G ⇒
+      // C Major; G+B alone still ⇒ G Major even without the 5th), ranked so
+      // the tightest fit sorts first — not the single-note browse list.
+      const chordMatches = matchedChords(input);
+      html = chordMatches.length
+        ? `<div class="scale-cards">` + chordMatches.map(({ root, quality }) => buildChordCard(root, quality)).join('') + `</div>`
+        : `<div class="empty-msg">No standard chords match these notes</div>`;
+    }
+    content.innerHTML = html;
+    return;
+  }
+
   const matches = [];
   const largeInput = input.length > 7;
 
@@ -1619,42 +1643,23 @@ function analyze() {
   });
 
   if (matches.length === 0) {
-    content.innerHTML = resultsView === 'chords'
-      ? '<div class="empty-msg">Select a single note to see its chords</div>'
-      : '<div class="empty-msg">No standard scales match these notes</div>';
+    content.innerHTML = '<div class="empty-msg">No standard scales match these notes</div>';
     return;
   }
 
-  // With a single note picked, "what key is this song in" isn't the question —
-  // it's "show me this note's own scales first, then the relative keys that
-  // merely happen to contain it" (e.g. C's own scales before A minor pentatonic).
-  const singleNote = input.length === 1;
-
   let html = '';
 
-  if (resultsView === 'chords') {
-    // Chord reference is only meaningful with exactly one note selected —
-    // guitar-only content by nature, independent of the modal's instrument setting.
-    if (singleNote) {
-      html += `<div class="scale-cards">`;
-      CHORD_DISPLAY_ORDER.forEach(q => { html += buildChordCard(input[0], q); });
-      html += `</div>`;
-    } else {
-      html += `<div class="empty-msg">Select a single note to see its chords</div>`;
+  // Scale groups by type
+  if (singleNote) {
+    const rooted   = matches.filter(m => m.root === input[0]);
+    const relative = matches.filter(m => m.root !== input[0]);
+    html += renderScaleGroups(rooted, input);
+    if (relative.length) {
+      html += `<div class="section-title" style="margin-top:26px">Relative Keys <span style="opacity:.55;font-weight:600;font-size:11px;">(also contain ${noteName(input[0])})</span></div>`;
+      html += renderScaleGroups(relative, input);
     }
   } else {
-    // Scale groups by type
-    if (singleNote) {
-      const rooted   = matches.filter(m => m.root === input[0]);
-      const relative = matches.filter(m => m.root !== input[0]);
-      html += renderScaleGroups(rooted, input);
-      if (relative.length) {
-        html += `<div class="section-title" style="margin-top:26px">Relative Keys <span style="opacity:.55;font-weight:600;font-size:11px;">(also contain ${noteName(input[0])})</span></div>`;
-        html += renderScaleGroups(relative, input);
-      }
-    } else {
-      html += renderScaleGroups(matches, input);
-    }
+    html += renderScaleGroups(matches, input);
   }
 
   content.innerHTML = html;
@@ -2235,7 +2240,7 @@ const TAB_STRINGS = {
 
 // Curated display order for the "<Note>'s Chords" reference section — most
 // commonly used qualities first.
-const CHORD_DISPLAY_ORDER = ['maj','m','7','maj7','m7','dim','aug','sus2','sus4','add9','m9','dim7','m7b5','mM7','madd9','9','5'];
+const CHORD_DISPLAY_ORDER = ['maj','m','5','7','maj7','m7','dim','aug','sus2','sus4','add9','m9','dim7','m7b5','mM7','madd9','9'];
 
 function chordIntervalRole(iv) {
   const semis = iv % 12;
@@ -2293,6 +2298,29 @@ const CHORD_LABELS = {
   'm7b5': 'Half-Diminished (m7♭5)', 'dim7': 'Diminished 7th', 'sus2': 'Sus2', 'sus4': 'Sus4',
   'add9': 'Add9', 'madd9': 'Minor Add9', '9': 'Dominant 9th', 'm9': 'Minor 9th',
 };
+
+// Chord matching for multi-note selections: same subset rule the Scales tab
+// already uses (your notes ⊆ candidate — the candidate may have more), so a
+// partial voicing like G+B (root+third, no fifth) still surfaces G Major
+// instead of matching nothing. Ranked by coverage first (the tightest fit —
+// fewest notes you didn't pick — sorts first; an exact match naturally lands
+// at the top since its coverage is 1), then by CHORD_DISPLAY_ORDER's
+// commonness rank so ties (e.g. every 3-note chord containing G+B) put
+// G Major ahead of D#aug instead of falling back to root order. Symmetric
+// chords (dim7, aug) legitimately match several roots at once, same as
+// scales do for modal/relative matches.
+function matchedChords(input) {
+  const results = [];
+  CHORD_DISPLAY_ORDER.forEach((q, rank) => {
+    for (let root = 0; root < 12; root++) {
+      const chordNotes = [...new Set(CHORD_INTERVALS[q].map(iv => (root + iv) % 12))];
+      if (!input.every(n => chordNotes.includes(n))) continue;
+      results.push({ root, quality: q, rank, coverage: input.length / chordNotes.length });
+    }
+  });
+  results.sort((a, b) => b.coverage - a.coverage || a.rank - b.rank || a.root - b.root);
+  return results;
+}
 
 // ── REAL CHORD VOICINGS ──────────────────────────────────────────────────────
 //
