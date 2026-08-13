@@ -734,7 +734,7 @@ body {
   flex-wrap: wrap;
 }
 
-.modal-inst-group, .modal-view-group {
+.modal-inst-group, .modal-view-group, .modal-triadview-group {
   display: flex;
   gap: 4px;
 }
@@ -745,8 +745,13 @@ body {
 .modal.is-chord .modal-pin-btn { display: none; }
 /* A real fixed voicing has no "All Notes"/"Position" — it's one exact shape */
 .modal.has-diagram .modal-view-group { display: none; }
+/* Whole Chord/Triad only makes sense for chords with actual extension notes
+   to drop (7ths, 9ths, add9s) — hidden otherwise (plain triads, power chords,
+   scale modals) via a class toggled in JS rather than a static CSS rule. */
+.modal-triadview-group { display: none; }
+.modal.has-triad-toggle .modal-triadview-group { display: flex; }
 
-.modal-inst-btn, .modal-view-btn {
+.modal-inst-btn, .modal-view-btn, .modal-triadview-btn {
   padding: 5px 14px;
   border: 2px solid #e2e8f0;
   background: #f8fafc;
@@ -758,7 +763,7 @@ body {
   border-radius: 8px;
   transition: all 0.12s;
 }
-.modal-inst-btn.on, .modal-view-btn.on {
+.modal-inst-btn.on, .modal-view-btn.on, .modal-triadview-btn.on {
   background: #eff6ff;
   border-color: #bfdbfe;
   color: #2563eb;
@@ -1314,6 +1319,10 @@ body {
         <button class="modal-view-btn on" data-mview="all">All Notes</button>
         <button class="modal-view-btn"    data-mview="position">Position</button>
       </div>
+      <div class="modal-triadview-group">
+        <button class="modal-triadview-btn on" data-mtriad="full"  onclick="setModalChordSimplified(false)">Whole Chord</button>
+        <button class="modal-triadview-btn"    data-mtriad="triad" onclick="setModalChordSimplified(true)">Triad</button>
+      </div>
     </div>
     <div class="fboard-wrap">
       <div class="fboard" id="fboard"></div>
@@ -1409,6 +1418,7 @@ let anchorNote = null; // { stringIdx, fret, direction: 1 | -1 } — click-to-an
 let modalRoot = 0;
 let modalScaleName = '';
 let modalChordQuality = null; // set instead of modalScaleName when the modal is showing a chord
+let modalChordSimplified = false; // true = show just the underlying triad of modalChordQuality, not its extensions
 let useFlats = false;
 
 function noteName(idx) {
@@ -1741,13 +1751,29 @@ function noteRole(noteIdx, root, scale) {
   return 'scale';
 }
 
+// Whether modalChordQuality actually has extension notes to drop for the
+// Triad view — false for things that are already triads or smaller (maj, m,
+// dim, aug, sus2, sus4, the power chord), which is also what gates whether
+// the Whole Chord/Triad toggle shows at all.
+function chordHasTriadReduction(quality) {
+  return !!quality && CHORD_TRIAD_OF[quality] && CHORD_TRIAD_OF[quality] !== quality;
+}
+
+// The quality actually being rendered right now — the triad underneath
+// modalChordQuality when simplified, otherwise modalChordQuality itself.
+function effectiveChordQuality() {
+  if (!modalChordQuality) return null;
+  return (modalChordSimplified && chordHasTriadReduction(modalChordQuality)) ? CHORD_TRIAD_OF[modalChordQuality] : modalChordQuality;
+}
+
 // A chord quality is structurally the same shape as a scale (root + interval
 // list), so it can be pushed through the exact same modal/fretboard pipeline —
 // position boxes, click-to-anchor runs, root/third/fifth coloring — without a
 // parallel implementation. This returns whichever one is currently loaded.
 function getModalScaleData() {
   if (modalChordQuality) {
-    return { name: CHORD_LABELS[modalChordQuality] || modalChordQuality, iv: CHORD_INTERVALS[modalChordQuality] };
+    const q = effectiveChordQuality();
+    return { name: CHORD_LABELS[q] || q, iv: CHORD_INTERVALS[q] };
   }
   return SCALES.find(s => s.name === modalScaleName);
 }
@@ -1758,6 +1784,7 @@ function openScaleModal(root, scaleName) {
   modalRoot = root;
   modalScaleName = scaleName;
   modalChordQuality = null;
+  modalChordSimplified = false;
   document.getElementById('modal').classList.remove('is-chord');
   document.getElementById('modal-alias').textContent = scale.alias ? `/ ${scale.alias}` : '';
   showModal(root, scale);
@@ -1768,9 +1795,18 @@ function openChordModal(root, quality) {
   modalRoot = root;
   modalScaleName = '';
   modalChordQuality = quality;
+  modalChordSimplified = false;
   document.getElementById('modal').classList.add('is-chord');
   document.getElementById('modal-alias').textContent = '';
   showModal(root, getModalScaleData());
+}
+
+// Toggled from the modal's Whole Chord/Triad buttons — re-renders in place
+// rather than reopening, so the fretboard/diagram just swaps underneath you.
+function setModalChordSimplified(simplified) {
+  if (!chordHasTriadReduction(modalChordQuality)) return;
+  modalChordSimplified = simplified;
+  showModal(modalRoot, getModalScaleData());
 }
 
 function showModal(root, scale) {
@@ -1795,16 +1831,21 @@ function showModal(root, scale) {
   document.querySelectorAll('.modal-view-btn').forEach(b => {
     b.classList.toggle('on', b.dataset.mview === modalView);
   });
+  document.getElementById('modal').classList.toggle('has-triad-toggle', chordHasTriadReduction(modalChordQuality));
+  document.querySelectorAll('.modal-triadview-btn').forEach(b => {
+    b.classList.toggle('on', b.dataset.mtriad === (modalChordSimplified ? 'triad' : 'full'));
+  });
 
   litFrets = new Set();
   anchorNote = null;
 
   // A verified real voicing takes priority over the derived fretboard-position
   // view — "All Notes"/"Position" don't mean anything for one fixed shape.
-  const voicing = modalChordQuality ? getChordVoicing(root, modalChordQuality) : null;
+  const effQuality = effectiveChordQuality();
+  const voicing = effQuality ? getChordVoicing(root, effQuality) : null;
   document.getElementById('modal').classList.toggle('has-diagram', !!voicing);
   if (voicing) {
-    document.getElementById('fboard').innerHTML = renderChordDiagram(root, modalChordQuality, voicing);
+    document.getElementById('fboard').innerHTML = renderChordDiagram(root, effQuality, voicing);
   } else {
     renderFretboard(root, scale);
   }
@@ -2297,6 +2338,17 @@ const CHORD_LABELS = {
   '7': 'Dominant 7th', 'maj7': 'Major 7th', 'm7': 'Minor 7th', 'mM7': 'Minor-Major 7th',
   'm7b5': 'Half-Diminished (m7♭5)', 'dim7': 'Diminished 7th', 'sus2': 'Sus2', 'sus4': 'Sus4',
   'add9': 'Add9', 'madd9': 'Minor Add9', '9': 'Dominant 9th', 'm9': 'Minor 9th',
+};
+
+// The triad each quality is built on — what the modal's "Triad" view falls
+// back to. A quality mapped to itself (maj, m, dim, aug, sus2, sus4, the
+// power chord) has nothing to drop, so it gets no Whole Chord/Triad toggle
+// at all (see chordHasTriadReduction).
+const CHORD_TRIAD_OF = {
+  'maj': 'maj', 'm': 'm', '5': '5', 'dim': 'dim', 'aug': 'aug', 'sus2': 'sus2', 'sus4': 'sus4',
+  '7': 'maj', 'maj7': 'maj', 'add9': 'maj', '9': 'maj',
+  'm7': 'm', 'mM7': 'm', 'madd9': 'm', 'm9': 'm',
+  'm7b5': 'dim', 'dim7': 'dim',
 };
 
 // Chord matching for multi-note selections: same subset rule the Scales tab
