@@ -734,7 +734,7 @@ body {
   flex-wrap: wrap;
 }
 
-.modal-inst-group, .modal-view-group {
+.modal-inst-group, .modal-view-group, .modal-triadview-group {
   display: flex;
   gap: 4px;
 }
@@ -745,8 +745,27 @@ body {
 .modal.is-chord .modal-pin-btn { display: none; }
 /* A real fixed voicing has no "All Notes"/"Position" — it's one exact shape */
 .modal.has-diagram .modal-view-group { display: none; }
+/* Always shown for any chord (never for a scale) regardless of whether this
+   particular quality has anything to drop — a toggle that sometimes exists
+   and sometimes doesn't, depending on chord type, is exactly the kind of
+   inconsistency that trips up someone who doesn't already know which chords
+   have "extensions." For a plain triad, Whole Chord and Triad just render
+   the same thing. */
+.modal-triadview-group { display: none; }
+.modal.is-chord .modal-triadview-group { display: flex; }
 
-.modal-inst-btn, .modal-view-btn {
+/* Only meaningful in Triad mode — Whole Chord's barre shapes don't (yet)
+   support picking a target fret. */
+.modal-fretpick-group { display: none; align-items: center; gap: 6px; }
+.modal.is-simplified .modal-fretpick-group { display: flex; }
+.modal-fretpick-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.modal-fretpick-select {
+  height: 30px; padding: 0 8px; border-radius: 8px; border: 2px solid #e2e8f0;
+  background: #f8fafc; color: #334155; font-family: 'Nunito', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+
+.modal-inst-btn, .modal-view-btn, .modal-triadview-btn {
   padding: 5px 14px;
   border: 2px solid #e2e8f0;
   background: #f8fafc;
@@ -758,7 +777,7 @@ body {
   border-radius: 8px;
   transition: all 0.12s;
 }
-.modal-inst-btn.on, .modal-view-btn.on {
+.modal-inst-btn.on, .modal-view-btn.on, .modal-triadview-btn.on {
   background: #eff6ff;
   border-color: #bfdbfe;
   color: #2563eb;
@@ -778,10 +797,48 @@ body {
    strings left-to-right low E to high e), same layout guitarists actually
    read chord shapes in. Deliberately different from the horizontal scale
    fretboard above, which is the right call for a single fixed shape. */
-.chord-diagram { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 24px 28px; }
-.cd-marker { position: absolute; text-align: center; font-size: 13px; font-weight: 800; color: var(--text-muted); }
+/* width:fit-content so margin:auto can actually center it — a block-level
+   flex container otherwise stretches to fill its parent's width, which
+   left the single Whole Chord diagram pinned to the left edge instead. */
+.chord-diagram { display: flex; align-items: flex-start; gap: 4px; padding: 12px 24px 28px; width: fit-content; margin: 0 auto; }
+.cd-fretboard { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+/* Always rendered at a fixed width, whether or not this shape needs a
+   number — that's what actually keeps every diagram's grid starting at the
+   same x, instead of a label that's only there sometimes shifting things
+   around it. */
+.cd-fretgutter { position: relative; flex-shrink: 0; }
+.cd-fret-badge {
+  position: absolute; left: 50%; transform: translate(-50%, -50%);
+  border-radius: 50%; background: #1a2130; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800;
+}
+
+/* Root position + every inversion, side by side (Triad mode). Each diagram's
+   declared width is only wide enough for its string lines — a dot centered
+   on the outermost string still extends 21px (half its 42px size) past that
+   edge on each side. That's invisible with one diagram and open space all
+   around it, but packed edge to edge here it bleeds into the next diagram
+   unless padding actually reserves the room for it. compact (a smaller
+   render of the same diagram, see renderChordDiagram) is what keeps all
+   three fitting on one row instead of wrapping to a second. */
+.triad-inversions { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 4px 0 28px; }
+.triad-inversion:not(:last-child) { border-right: 1px solid var(--border); padding-right: 6px; }
+.triad-inversion { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.triad-inversion .chord-diagram { padding: 0 17px 4px 0; }
+.triad-inversion-label {
+  font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-secondary); text-align: center;
+}
+.triad-inversion-sub {
+  display: block; font-size: 10px; font-weight: 600; text-transform: none; letter-spacing: normal;
+  color: var(--text-muted); margin-top: 2px;
+}
+.chord-diagram.compact .cd-marker { font-size: 16px; }
+.chord-diagram.compact .cd-dot { font-size: 10px; }
+.chord-diagram.compact .cd-fret-badge { font-size: 11px; }
+.cd-marker { position: absolute; top: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: var(--text-muted); }
 .cd-marker.cd-mute { color: #ef4444; }
-.cd-marker.cd-open { color: #16a34a; }
 .cd-grid { position: relative; }
 .cd-string { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--border); }
 .cd-fretline { position: absolute; left: 0; right: 0; height: 2px; background: var(--border); }
@@ -790,7 +847,6 @@ body {
 .cd-dot.is-root  { background: var(--accent-blue-bg); color: var(--accent-blue-text); border-color: var(--accent-blue-border); }
 .cd-dot.is-third { background: var(--accent-teal-bg); color: var(--accent-teal-text); border-color: var(--accent-teal-border); }
 .cd-dot.is-fifth { background: var(--accent-purple-bg); color: var(--accent-purple-text); border-color: var(--accent-purple-border); }
-.cd-startfret { font-size: 12px; font-weight: 700; color: var(--text-muted); align-self: flex-start; margin-left: 4px; }
 
 /* Fret number header row */
 .fret-num-row {
@@ -1314,6 +1370,14 @@ body {
         <button class="modal-view-btn on" data-mview="all">All Notes</button>
         <button class="modal-view-btn"    data-mview="position">Position</button>
       </div>
+      <div class="modal-triadview-group">
+        <button class="modal-triadview-btn on" data-mtriad="full"  onclick="setModalChordSimplified(false)">Whole Chord</button>
+        <button class="modal-triadview-btn"    data-mtriad="triad" onclick="setModalChordSimplified(true)">Triad</button>
+      </div>
+      <div class="modal-fretpick-group">
+        <label class="modal-fretpick-label" for="modal-fretpick">Near fret</label>
+        <select class="modal-fretpick-select" id="modal-fretpick" onchange="setModalTriadFret(this.value)"></select>
+      </div>
     </div>
     <div class="fboard-wrap">
       <div class="fboard" id="fboard"></div>
@@ -1409,6 +1473,8 @@ let anchorNote = null; // { stringIdx, fret, direction: 1 | -1 } — click-to-an
 let modalRoot = 0;
 let modalScaleName = '';
 let modalChordQuality = null; // set instead of modalScaleName when the modal is showing a chord
+let modalChordSimplified = false; // true = show just the underlying triad of modalChordQuality, not its extensions
+let modalTriadFret = 0; // 0 = "Open" (auto-pick the most compact position) — otherwise Triad mode voices as close to this fret as it can
 let useFlats = false;
 
 function noteName(idx) {
@@ -1741,13 +1807,29 @@ function noteRole(noteIdx, root, scale) {
   return 'scale';
 }
 
+// Whether modalChordQuality actually has extension notes to drop for the
+// Triad view — false for things that are already triads or smaller (maj, m,
+// dim, aug, sus2, sus4, the power chord), which is also what gates whether
+// the Whole Chord/Triad toggle shows at all.
+function chordHasTriadReduction(quality) {
+  return !!quality && CHORD_TRIAD_OF[quality] && CHORD_TRIAD_OF[quality] !== quality;
+}
+
+// The quality actually being rendered right now — the triad underneath
+// modalChordQuality when simplified, otherwise modalChordQuality itself.
+function effectiveChordQuality() {
+  if (!modalChordQuality) return null;
+  return (modalChordSimplified && chordHasTriadReduction(modalChordQuality)) ? CHORD_TRIAD_OF[modalChordQuality] : modalChordQuality;
+}
+
 // A chord quality is structurally the same shape as a scale (root + interval
 // list), so it can be pushed through the exact same modal/fretboard pipeline —
 // position boxes, click-to-anchor runs, root/third/fifth coloring — without a
 // parallel implementation. This returns whichever one is currently loaded.
 function getModalScaleData() {
   if (modalChordQuality) {
-    return { name: CHORD_LABELS[modalChordQuality] || modalChordQuality, iv: CHORD_INTERVALS[modalChordQuality] };
+    const q = effectiveChordQuality();
+    return { name: CHORD_LABELS[q] || q, iv: CHORD_INTERVALS[q] };
   }
   return SCALES.find(s => s.name === modalScaleName);
 }
@@ -1758,6 +1840,7 @@ function openScaleModal(root, scaleName) {
   modalRoot = root;
   modalScaleName = scaleName;
   modalChordQuality = null;
+  modalChordSimplified = false;
   document.getElementById('modal').classList.remove('is-chord');
   document.getElementById('modal-alias').textContent = scale.alias ? `/ ${scale.alias}` : '';
   showModal(root, scale);
@@ -1768,9 +1851,26 @@ function openChordModal(root, quality) {
   modalRoot = root;
   modalScaleName = '';
   modalChordQuality = quality;
+  modalChordSimplified = false;
+  modalTriadFret = 0;
   document.getElementById('modal').classList.add('is-chord');
   document.getElementById('modal-alias').textContent = '';
   showModal(root, getModalScaleData());
+}
+
+// Toggled from the modal's Whole Chord/Triad buttons — re-renders in place
+// rather than reopening, so the fretboard/diagram just swaps underneath you.
+// Always runs even when this quality has no reduction (chordHasTriadReduction
+// is false) — the buttons stay clickable either way, they just render the
+// same thing, which beats the toggle disappearing entirely for some chords.
+function setModalChordSimplified(simplified) {
+  modalChordSimplified = simplified;
+  showModal(modalRoot, getModalScaleData());
+}
+
+function setModalTriadFret(value) {
+  modalTriadFret = +value || 0;
+  showModal(modalRoot, getModalScaleData());
 }
 
 function showModal(root, scale) {
@@ -1795,16 +1895,32 @@ function showModal(root, scale) {
   document.querySelectorAll('.modal-view-btn').forEach(b => {
     b.classList.toggle('on', b.dataset.mview === modalView);
   });
+  document.querySelectorAll('.modal-triadview-btn').forEach(b => {
+    b.classList.toggle('on', b.dataset.mtriad === (modalChordSimplified ? 'triad' : 'full'));
+  });
+  document.getElementById('modal').classList.toggle('is-simplified', modalChordSimplified);
+  document.getElementById('modal-fretpick').value = modalTriadFret;
 
   litFrets = new Set();
   anchorNote = null;
 
   // A verified real voicing takes priority over the derived fretboard-position
   // view — "All Notes"/"Position" don't mean anything for one fixed shape.
-  const voicing = modalChordQuality ? getChordVoicing(root, modalChordQuality) : null;
-  document.getElementById('modal').classList.toggle('has-diagram', !!voicing);
-  if (voicing) {
-    document.getElementById('fboard').innerHTML = renderChordDiagram(root, modalChordQuality, voicing);
+  // Triad mode shows root position side by side with every inversion (not
+  // just one computed voicing) — the point of showing inversions at all is
+  // comparing them, which a one-at-a-time picker would undercut for exactly
+  // the audience (people who don't have these memorized) this is for.
+  const effQuality = effectiveChordQuality();
+  let fboardHtml = null;
+  if (modalChordQuality && modalChordSimplified) {
+    fboardHtml = renderTriadInversions(root, effQuality, modalTriadFret);
+  } else if (effQuality) {
+    const voicing = getChordVoicing(root, effQuality);
+    if (voicing) fboardHtml = renderChordDiagram(root, effQuality, voicing, true);
+  }
+  document.getElementById('modal').classList.toggle('has-diagram', !!fboardHtml);
+  if (fboardHtml) {
+    document.getElementById('fboard').innerHTML = fboardHtml;
   } else {
     renderFretboard(root, scale);
   }
@@ -1966,33 +2082,56 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
 // Renders a single fixed chord voicing in the conventional vertical chord-box
 // layout (nut at top, strings left-to-right low E to high e) — the way
 // guitarists actually read a named shape, as opposed to the horizontal
-// full-neck view used for scale positions.
-function renderChordDiagram(root, quality, voicing) {
+// full-neck view used for scale positions. Always all 6 strings, muted ones
+// marked with ✕ — that's what a real chord diagram looks like (including
+// for a 2-3 note triad/power-chord voicing), not just the strings in use.
+// compact shrinks every dimension for the Triad toggle's 3-across inversion
+// row — three full-size diagrams don't fit in the modal without wrapping to
+// a second row, and a slightly smaller reading is a better trade than that.
+function renderChordDiagram(root, quality, voicing, compact = false) {
   const { frets } = voicing;
-  const STRING_GAP = 56, ROW_HEIGHT = 56, DOT = 42; // matches the scale fretboard's .ndot size
-  const openNotes = [4, 9, 2, 7, 11, 4]; // low E, A, D, G, B, high e
+  const STRING_GAP = compact ? 46 : 56, ROW_HEIGHT = compact ? 46 : 56, DOT = compact ? 34 : 42; // matches the scale fretboard's .ndot size
+  const GUTTER = compact ? 32 : 40, BADGE = compact ? 24 : 30; // always-reserved fret-number column, so every diagram's grid starts at the same x regardless of whether this one needs a label
+  const openNotes = OPEN_STRING_NOTES;
   const pseudoScale = { iv: CHORD_INTERVALS[quality] };
 
   const playedFrets = frets.filter(f => f !== 'x' && f > 0);
-  const hasOpen = frets.some(f => f === 0);
+  // Nut position (no badge) only when nothing is actually fretted — every
+  // used string is either open or muted. A shape can have an open string
+  // and still be fretted elsewhere (e.g. bass on fret 2, another note open)
+  // — that's not "at the nut," it needs its own badge same as any other
+  // fretted shape. Keying this off "any open string" instead of "anything
+  // fretted at all" was the bug: one open string anywhere suppressed the
+  // badge even when the shape clearly didn't start at fret 0.
+  const allOpen = playedFrets.length === 0;
   const maxFret = playedFrets.length ? Math.max(...playedFrets) : 0;
   const minFret = playedFrets.length ? Math.min(...playedFrets) : 0;
-  const windowStart = hasOpen ? 0 : minFret;
+  const windowStart = allOpen ? 0 : minFret;
   // topFret is the fret the very top grid line represents as a boundary — the
   // nut itself for an open-position shape, or one fret below the lowest
   // fretted note when the whole shape sits higher up the neck (in which case
-  // a "Nfr" label marks where that boundary actually falls on the real neck).
-  const topFret = hasOpen ? 0 : windowStart - 1;
+  // a badge marks where that boundary actually falls on the real neck).
+  const topFret = allOpen ? 0 : windowStart - 1;
   const numRows = Math.max(4, maxFret - topFret);
-  const showFretLabel = windowStart > 0;
+  const showFretLabel = !allOpen;
   const gridWidth = STRING_GAP * 5;
   const gridHeight = ROW_HEIGHT * numRows;
 
-  let markers = `<div class="cd-markers" style="position:relative;width:${gridWidth}px;height:22px">`;
+  // An open string is just as much a sounding chord tone as a fretted one —
+  // e.g. the open G in this C major shape is the chord's 5th — so it gets the
+  // same colored, lettered dot as a fretted note instead of a bare "○" that
+  // hides which note (or that a note is even there) from someone who can't
+  // already work it out themselves.
+  let markers = `<div class="cd-markers" style="position:relative;width:${gridWidth}px;height:${DOT}px">`;
   frets.forEach((f, s) => {
-    const cls = f === 'x' ? 'cd-mute' : f === 0 ? 'cd-open' : '';
-    const label = f === 'x' ? '✕' : f === 0 ? '○' : '';
-    markers += `<div class="cd-marker ${cls}" style="left:${s * STRING_GAP - STRING_GAP / 2}px;width:${STRING_GAP}px">${label}</div>`;
+    const left = s * STRING_GAP - DOT / 2;
+    if (f === 'x') {
+      markers += `<div class="cd-marker cd-mute" style="left:${left}px;width:${DOT}px;height:${DOT}px">✕</div>`;
+    } else if (f === 0) {
+      const pitch = openNotes[s];
+      const role = noteRole(pitch, root, pseudoScale);
+      markers += `<div class="cd-dot is-${role}" style="top:0;left:${left}px;width:${DOT}px;height:${DOT}px">${noteName(pitch)}</div>`;
+    }
   });
   markers += '</div>';
 
@@ -2014,8 +2153,20 @@ function renderChordDiagram(root, quality, voicing) {
   });
   grid += '</div>';
 
-  const fretLabel = showFretLabel ? `<div class="cd-startfret">${windowStart}fr</div>` : '';
-  return `<div class="chord-diagram">${markers}${grid}${fretLabel}</div>`;
+  // A fixed-width gutter, always present (empty when the shape starts at the
+  // nut) rather than a label floating wherever it fits — the fret number's
+  // distance from the grid was varying diagram to diagram (a lone number had
+  // the whole page margin to sit in; a packed one only had a few pixels
+  // before the next diagram's border), which read as inconsistent even
+  // though each one was individually positioned "correctly." Rendered as a
+  // solid badge — the same treatment printed chord charts use — rather than
+  // plain text, so it doesn't get lost among the colored note dots.
+  const badgeCenterY = DOT + 6 + 0.5 * ROW_HEIGHT; // markers row + the gap below it + halfway into the first grid row
+  const gutter = `<div class="cd-fretgutter" style="width:${GUTTER}px">` +
+    (showFretLabel ? `<div class="cd-fret-badge" style="top:${badgeCenterY}px;width:${BADGE}px;height:${BADGE}px">${windowStart}</div>` : '') +
+    `</div>`;
+
+  return `<div class="chord-diagram${compact ? ' compact' : ''}">${gutter}<div class="cd-fretboard">${markers}${grid}</div></div>`;
 }
 
 function renderFretboard(root, scale) {
@@ -2299,6 +2450,17 @@ const CHORD_LABELS = {
   'add9': 'Add9', 'madd9': 'Minor Add9', '9': 'Dominant 9th', 'm9': 'Minor 9th',
 };
 
+// The triad each quality is built on — what the modal's "Triad" view falls
+// back to. A quality mapped to itself (maj, m, dim, aug, sus2, sus4, the
+// power chord) has nothing to drop, so it gets no Whole Chord/Triad toggle
+// at all (see chordHasTriadReduction).
+const CHORD_TRIAD_OF = {
+  'maj': 'maj', 'm': 'm', '5': '5', 'dim': 'dim', 'aug': 'aug', 'sus2': 'sus2', 'sus4': 'sus4',
+  '7': 'maj', 'maj7': 'maj', 'add9': 'maj', '9': 'maj',
+  'm7': 'm', 'mM7': 'm', 'madd9': 'm', 'm9': 'm',
+  'm7b5': 'dim', 'dim7': 'dim',
+};
+
 // Chord matching for multi-note selections: same subset rule the Scales tab
 // already uses (your notes ⊆ candidate — the candidate may have more), so a
 // partial voicing like G+B (root+third, no fifth) still surfaces G Major
@@ -2402,6 +2564,159 @@ function getChordVoicing(root, quality) {
   const template = useE ? E_SHAPE[quality] : A_SHAPE[quality];
   const frets = template.map(v => v === 'x' ? 'x' : v + rootFret);
   return { frets, startFret: rootFret };
+}
+
+const OPEN_STRING_NOTES = [4, 9, 2, 7, 11, 4]; // low E, A, D, G, B, high e — shared with renderChordDiagram
+
+// Minimal "close voicing" triads for the modal's Triad toggle — the standard
+// movable 3-string-family system real guitarists actually learn (verified
+// against "Guitar Chord Inversions", appliedguitartheory.com: for any major
+// or minor triad, root/1st-inversion/2nd-inversion each have a fixed shape
+// on strings 6-5-4, 5-4-3, or 4-3-2 — same 3 adjacent strings for all three
+// inversions of a given family, just sliding up the neck). That's the piece
+// a naive "search every possible string combo, keep whichever is smallest"
+// solver misses: it optimizes each inversion independently, so root
+// position might land on strings 6-4-2 while 1st inversion lands on 5-3-2 —
+// two unrelated, unrecognizable shapes, even though each is individually
+// "optimal." A fixed family per chord, reused across all three inversions,
+// is what actually makes this learnable — you recognize "the 6th-string
+// shape" the next time you see it, moved to a different fret.
+//
+// bassIndex picks which of the chord's unique intervals (in CHORD_INTERVALS'
+// own order — index 0 is always the root) is forced onto the lowest (bass)
+// string of the family: 0 for root position, 1 for first inversion, 2 for
+// second.
+const TRIAD_STRING_FAMILIES = [[0,1,2],[1,2,3],[2,3,4]]; // 6th/5th/4th-string-root, per the PDF
+const POWER_STRING_FAMILIES = [[0,1],[1,2],[2,3]]; // same idea, one fewer note
+const PERMS_3 = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+const PERMS_2 = [[0,1],[1,0]];
+
+// Computes the voicing for one specific family (fixed set of adjacent
+// strings) and bass note — the family itself is never re-chosen here, so
+// calling this across bassIndex 0/1/2 with the same `strings` array is what
+// keeps root/1st/2nd inversion as one consistent, recognizable shape.
+// shiftFrets (always 0 or a positive multiple of 12) moves the whole shape
+// up by that many frets — the shape repeats every octave, so this is how
+// "show it up around fret 7" is done: not a different shape, just a later
+// occurrence of the same one. The shift is computed once from root position
+// in renderTriadInversions and reused for every bassIndex here, so all
+// three inversions move together instead of each independently chasing the
+// target fret and ending up scattered.
+function triadVoicingForFamily(root, quality, bassIndex, strings, shiftFrets = 0) {
+  const ivs = [...new Set(CHORD_INTERVALS[quality].map(iv => iv % 12))];
+  const isPower = ivs.length === 2;
+  if (bassIndex >= ivs.length) return null;
+  const targets = ivs.map(iv => (root + iv) % 12);
+  const perms = (isPower ? PERMS_2 : PERMS_3).filter(order => order[0] === bassIndex);
+
+  // Two fingerings put the bass note on this family's lowest string (the
+  // other two notes can swap order on the remaining strings) — keep
+  // whichever sits closer to the nut, same tiebreak as everywhere else here.
+  //
+  // Each note's raw fret (0-11, the string's own lowest occurrence of that
+  // pitch) is only one octave of it — the other is raw+12, same pitch class,
+  // one octave up. A shape can look artificially wide (span 11: frets
+  // 0, 0, 11) when it's actually a tight cluster that wrapped around the
+  // fret-0/12 boundary (12, 12, 11 — span 1). Trying both octaves per note
+  // and keeping whichever combination is tightest is what the PDF's own
+  // 2nd-inversion diagrams do (A major: 5th and root pushed to fret 12
+  // alongside the 3rd's natural fret 11, not left at their own fret 0).
+  let best = null;
+  for (const order of perms) {
+    const raw = order.map((targetIdx, i) => (targets[targetIdx] - OPEN_STRING_NOTES[strings[i]] + 12) % 12);
+    for (let mask = 0; mask < (1 << raw.length); mask++) {
+      const frets = raw.map((f, i) => (mask & (1 << i)) ? f + 12 : f);
+      const span = Math.max(...frets) - Math.min(...frets);
+      const highFret = Math.max(...frets);
+      // Span first, not highest-fret-used first: a 1-fret reach up at fret 12
+      // is an easier hand position than a 7-fret stretch starting at fret 0,
+      // even though the latter technically starts "lower." Without this, the
+      // octave-collapsing above finds the tight fret-12 cluster but then
+      // loses to a wider, lower-starting spread anyway.
+      if (!best || span < best.span || (span === best.span && highFret < best.highFret)) {
+        best = { frets, span, highFret, startFret: Math.min(...frets) };
+      }
+    }
+  }
+  if (!best) return null;
+
+  if (shiftFrets > 0) {
+    best = {
+      frets: best.frets.map(f => f + shiftFrets),
+      span: best.span,
+      highFret: best.highFret + shiftFrets,
+      startFret: best.startFret + shiftFrets,
+    };
+  }
+
+  const fullFrets = new Array(6).fill('x');
+  strings.forEach((s, i) => { fullFrets[s] = best.frets[i]; });
+  return { frets: fullFrets, startFret: best.startFret, highFret: best.highFret, span: best.span };
+}
+
+// Named by which chord tone the interval itself is — not by its raw position
+// in ivs — so this stays correct for the power chord (root/fifth only, no
+// 3rd) and for a future 7th-chord extension, not just a plain triad's
+// root/3rd/5th order.
+function inversionLabel(interval) {
+  const iv = interval % 12;
+  if (iv === 0) return { name: 'Root Position', explain: 'no inversion' };
+  if (iv === 3 || iv === 4) return { name: 'First Inversion', explain: '3rd in the bass' };
+  if (iv === 6 || iv === 7 || iv === 8) return { name: 'Second Inversion', explain: '5th in the bass' };
+  return { name: 'Third Inversion', explain: '7th in the bass' }; // not reachable yet — Triad mode always reduces to a 3-note triad
+}
+
+// Root position + every inversion, side by side — the point of showing
+// inversions at all is comparing how the same notes rearrange across
+// strings, which gets lost if you can only look at one at a time. Whichever
+// family (6th/5th/4th-string-root) gives the most compact root position is
+// the one used for all three — see triadVoicingForFamily. With a targetFret,
+// that changes to whichever (family, shift) keeps ALL THREE inversions
+// closest to the target on average, not just root — a family whose root
+// happens to land near the target but whose 1st inversion naturally sits
+// far away elsewhere on the neck isn't actually useful to someone playing
+// up around that fret, even though root alone looks like a good match.
+function renderTriadInversions(root, quality, targetFret = 0) {
+  const ivs = [...new Set(CHORD_INTERVALS[quality].map(iv => iv % 12))];
+  const positions = ivs.length; // 3 for a real triad, 2 for the power chord
+  const families = positions === 2 ? POWER_STRING_FAMILIES : TRIAD_STRING_FAMILIES;
+
+  let family = families[0], shiftFrets = 0, bestScore = Infinity;
+  for (const strings of families) {
+    const naturals = [];
+    for (let bi = 0; bi < positions; bi++) {
+      const v = triadVoicingForFamily(root, quality, bi, strings, 0);
+      if (!v) break;
+      naturals.push(v);
+    }
+    if (naturals.length !== positions) continue;
+
+    if (targetFret > 0) {
+      // Natural positions are already as low as they go (0-11ish), so the
+      // target (capped at 24) is at most two octaves above any of them.
+      for (let shift = 0; shift <= 24; shift += 12) {
+        const score = naturals.reduce((sum, v) => sum + Math.abs(v.startFret + shift - targetFret), 0);
+        if (score < bestScore) { bestScore = score; family = strings; shiftFrets = shift; }
+      }
+    } else {
+      const rootVoicing = naturals[0];
+      const score = rootVoicing.span * 1000 + rootVoicing.highFret; // span dominates, highFret only breaks ties
+      if (score < bestScore) { bestScore = score; family = strings; shiftFrets = 0; }
+    }
+  }
+
+  let html = `<div class="triad-inversions">`;
+  for (let bassIndex = 0; bassIndex < positions; bassIndex++) {
+    const voicing = triadVoicingForFamily(root, quality, bassIndex, family, shiftFrets);
+    if (!voicing) continue;
+    const { name, explain } = inversionLabel(ivs[bassIndex]);
+    html += `<div class="triad-inversion">
+      <div class="triad-inversion-label">${name}<span class="triad-inversion-sub">(${explain})</span></div>
+      ${renderChordDiagram(root, quality, voicing, true)}
+    </div>`;
+  }
+  html += `</div>`;
+  return html;
 }
 
 function chordToNotes(token) {
@@ -2978,6 +3293,16 @@ refreshLibrary().then(restoreSongFromHash);
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 buildNoteGrid();
+
+(function populateFretPicker() {
+  const select = document.getElementById('modal-fretpick');
+  for (let f = 0; f <= 24; f++) {
+    const opt = document.createElement('option');
+    opt.value = f;
+    opt.textContent = f === 0 ? 'Open' : f;
+    select.appendChild(opt);
+  }
+})();
 syncInstrumentButtons(); // reflect the default immediately; settings may override below
 
 fetchSettings().then(s => {
