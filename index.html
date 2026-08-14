@@ -787,6 +787,21 @@ body {
    read chord shapes in. Deliberately different from the horizontal scale
    fretboard above, which is the right call for a single fixed shape. */
 .chord-diagram { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 24px 28px; }
+
+/* Root position + every inversion, side by side (Triad mode). Each diagram's
+   declared width is only wide enough for its string lines — a dot centered
+   on the outermost string still extends 21px (half its 42px size) past that
+   edge on each side. That's invisible with one diagram and open space all
+   around it, but packed edge to edge here it bleeds into the next diagram
+   unless padding actually reserves the room for it. */
+.triad-inversions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 4px 24px 28px; }
+.triad-inversion:not(:last-child) { border-right: 1px solid var(--border); padding-right: 8px; }
+.triad-inversion { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.triad-inversion .chord-diagram { padding: 0 21px 4px; gap: 8px; }
+.triad-inversion-label {
+  font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
 .cd-marker { position: absolute; top: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: var(--text-muted); }
 .cd-marker.cd-mute { color: #ef4444; }
 .cd-grid { position: relative; }
@@ -1850,17 +1865,21 @@ function showModal(root, scale) {
 
   // A verified real voicing takes priority over the derived fretboard-position
   // view — "All Notes"/"Position" don't mean anything for one fixed shape.
-  // Triad mode always uses the minimal computed voicing (no octave doubling)
-  // rather than reusing Whole Chord's real strummed shape — otherwise a
-  // chord that's already a triad (maj, m, dim, aug, sus2, sus4, "5") would
-  // render identically in both modes despite the toggle claiming otherwise.
+  // Triad mode shows root position side by side with every inversion (not
+  // just one computed voicing) — the point of showing inversions at all is
+  // comparing them, which a one-at-a-time picker would undercut for exactly
+  // the audience (people who don't have these memorized) this is for.
   const effQuality = effectiveChordQuality();
-  const voicing = !effQuality ? null
-    : modalChordSimplified ? getTriadVoicing(root, effQuality)
-    : getChordVoicing(root, effQuality);
-  document.getElementById('modal').classList.toggle('has-diagram', !!voicing);
-  if (voicing) {
-    document.getElementById('fboard').innerHTML = renderChordDiagram(root, effQuality, voicing);
+  let fboardHtml = null;
+  if (modalChordQuality && modalChordSimplified) {
+    fboardHtml = renderTriadInversions(root, effQuality);
+  } else if (effQuality) {
+    const voicing = getChordVoicing(root, effQuality);
+    if (voicing) fboardHtml = renderChordDiagram(root, effQuality, voicing);
+  }
+  document.getElementById('modal').classList.toggle('has-diagram', !!fboardHtml);
+  if (fboardHtml) {
+    document.getElementById('fboard').innerHTML = fboardHtml;
   } else {
     renderFretboard(root, scale);
   }
@@ -2022,7 +2041,9 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
 // Renders a single fixed chord voicing in the conventional vertical chord-box
 // layout (nut at top, strings left-to-right low E to high e) — the way
 // guitarists actually read a named shape, as opposed to the horizontal
-// full-neck view used for scale positions.
+// full-neck view used for scale positions. Always all 6 strings, muted ones
+// marked with ✕ — that's what a real chord diagram looks like (including
+// for a 2-3 note triad/power-chord voicing), not just the strings in use.
 function renderChordDiagram(root, quality, voicing) {
   const { frets } = voicing;
   const STRING_GAP = 56, ROW_HEIGHT = 56, DOT = 42; // matches the scale fretboard's .ndot size
@@ -2501,23 +2522,25 @@ const OPEN_STRING_NOTES = [4, 9, 2, 7, 11, 4]; // low E, A, D, G, B, high e — 
 // curated shapes above rely on (each string's sounding pitch is computed,
 // not eyeballed), and every root gets a genuinely playable close position.
 //
-// Root position only, for now: the root is always forced onto the group's
-// lowest (bass) string, never left free to land wherever minimizes the fret
-// span — an inversion with the 3rd or 5th in the bass is a different chord
-// voicing conceptually, not just a smaller shape, and showing one under a
-// plain "Triad" label (with actual inversions still unbuilt) would silently
-// hand someone a 2nd-inversion shape as if it were the chord's main form.
+// bassIndex picks which of the chord's unique intervals (in CHORD_INTERVALS'
+// own order — index 0 is always the root) is forced onto the group's lowest
+// (bass) string: 0 for root position, 1 for first inversion, 2 for second.
+// That note is never left free to land wherever minimizes the fret span —
+// an inversion with a different note in the bass is a different chord
+// voicing conceptually, not just a smaller shape, so which one you get has
+// to be an explicit choice, not a side effect of the span search.
 const TRIAD_STRING_GROUPS = [[0,1,2],[1,2,3],[2,3,4],[3,4,5]]; // E-A-D, A-D-G, D-G-B, G-B-e
 const POWER_STRING_GROUPS = [[0,1],[1,2],[2,3],[3,4],[4,5]];
-const PERMS_3_ROOT_IN_BASS = [[0,1,2],[0,2,1]]; // target index 0 (the root — always CHORD_INTERVALS' first entry) fixed to the lowest string
-const PERMS_2_ROOT_IN_BASS = [[0,1]];
+const PERMS_3 = [[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+const PERMS_2 = [[0,1],[1,0]];
 
-function getTriadVoicing(root, quality) {
+function getTriadVoicing(root, quality, bassIndex = 0) {
   const ivs = [...new Set(CHORD_INTERVALS[quality].map(iv => iv % 12))];
   const isPower = ivs.length === 2;
   if (!isPower && ivs.length !== 3) return null; // only meant for actual triads and the power chord's root+5th
+  if (bassIndex >= ivs.length) return null;
   const groups = isPower ? POWER_STRING_GROUPS : TRIAD_STRING_GROUPS;
-  const perms = isPower ? PERMS_2_ROOT_IN_BASS : PERMS_3_ROOT_IN_BASS;
+  const perms = (isPower ? PERMS_2 : PERMS_3).filter(order => order[0] === bassIndex);
   const targets = ivs.map(iv => (root + iv) % 12);
 
   // Ranked by how close to the nut the shape sits (lowest highest-fret-used)
@@ -2543,6 +2566,26 @@ function getTriadVoicing(root, quality) {
   const fullFrets = new Array(6).fill('x');
   best.strings.forEach((s, i) => { fullFrets[s] = best.frets[i]; });
   return { frets: fullFrets, startFret: best.startFret };
+}
+
+// Root position + every inversion, side by side — the point of showing
+// inversions at all is comparing how the same notes rearrange across
+// strings, which gets lost if you can only look at one at a time.
+function renderTriadInversions(root, quality) {
+  const ivs = [...new Set(CHORD_INTERVALS[quality].map(iv => iv % 12))];
+  const positions = ivs.length; // 3 for a real triad, 2 for the power chord
+  let html = `<div class="triad-inversions">`;
+  for (let bassIndex = 0; bassIndex < positions; bassIndex++) {
+    const voicing = getTriadVoicing(root, quality, bassIndex);
+    if (!voicing) continue;
+    const bassName = noteName((root + ivs[bassIndex]) % 12);
+    html += `<div class="triad-inversion">
+      <div class="triad-inversion-label">${bassName} bass</div>
+      ${renderChordDiagram(root, quality, voicing)}
+    </div>`;
+  }
+  html += `</div>`;
+  return html;
 }
 
 function chordToNotes(token) {
