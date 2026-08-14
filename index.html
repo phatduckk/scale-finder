@@ -828,7 +828,11 @@ body {
 .triad-inversion .chord-diagram { padding: 0 17px 4px 0; }
 .triad-inversion-label {
   font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--text-secondary);
+  color: var(--text-secondary); text-align: center;
+}
+.triad-inversion-sub {
+  display: block; font-size: 10px; font-weight: 600; text-transform: none; letter-spacing: normal;
+  color: var(--text-muted); margin-top: 2px;
 }
 .chord-diagram.compact .cd-marker { font-size: 16px; }
 .chord-diagram.compact .cd-dot { font-size: 10px; }
@@ -2650,6 +2654,18 @@ function triadVoicingForFamily(root, quality, bassIndex, strings, shiftFrets = 0
   return { frets: fullFrets, startFret: best.startFret, highFret: best.highFret, span: best.span };
 }
 
+// Named by which chord tone the interval itself is — not by its raw position
+// in ivs — so this stays correct for the power chord (root/fifth only, no
+// 3rd) and for a future 7th-chord extension, not just a plain triad's
+// root/3rd/5th order.
+function inversionLabel(interval) {
+  const iv = interval % 12;
+  if (iv === 0) return { name: 'Root Position', explain: 'no inversion' };
+  if (iv === 3 || iv === 4) return { name: 'First Inversion', explain: '3rd in the bass' };
+  if (iv === 6 || iv === 7 || iv === 8) return { name: 'Second Inversion', explain: '5th in the bass' };
+  return { name: 'Third Inversion', explain: '7th in the bass' }; // not reachable yet — Triad mode always reduces to a 3-note triad
+}
+
 // Root position + every inversion, side by side — the point of showing
 // inversions at all is comparing how the same notes rearrange across
 // strings, which gets lost if you can only look at one at a time. Whichever
@@ -2693,9 +2709,9 @@ function renderTriadInversions(root, quality, targetFret = 0) {
   for (let bassIndex = 0; bassIndex < positions; bassIndex++) {
     const voicing = triadVoicingForFamily(root, quality, bassIndex, family, shiftFrets);
     if (!voicing) continue;
-    const bassName = noteName((root + ivs[bassIndex]) % 12);
+    const { name, explain } = inversionLabel(ivs[bassIndex]);
     html += `<div class="triad-inversion">
-      <div class="triad-inversion-label">${bassName} bass</div>
+      <div class="triad-inversion-label">${name}<span class="triad-inversion-sub">(${explain})</span></div>
       ${renderChordDiagram(root, quality, voicing, true)}
     </div>`;
   }
