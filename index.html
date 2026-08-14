@@ -813,6 +813,12 @@ body {
   display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 800;
 }
+/* String letter (E A D G B e) for a fretted string — same circle as a real
+   note dot, just invisible fill/border, so it lines up with the open-string
+   dots and mute marks in the same row instead of sitting above them in a
+   separate, misaligned row. Matches the scale fretboard's row labels, so
+   which column is which string isn't left to an unstated convention. */
+.cd-dot.cd-dot-ghost { background: transparent; border-color: transparent; color: var(--text-muted); }
 
 /* Root position + every inversion, side by side (Triad mode). Each diagram's
    declared width is only wide enough for its string lines — a dot centered
@@ -872,15 +878,31 @@ body {
   width: 100%;
 }
 
+/* Plain text by default (unchanged look) — gains a colored ring, like the
+   note dots on the grid, only when this string's open note is part of the
+   highlighted scale/chord. That's the open-note indicator now; the grid no
+   longer shows a separate dot for it. */
 .str-label {
+  position: relative;
   width: 32px;
+  height: 32px;
   flex-shrink: 0;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 12px;
   font-weight: 800;
   color: #64748b;
-  text-align: right;
-  padding-right: 8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-sizing: border-box;
 }
+.str-label.is-root  { background: var(--accent-blue-bg); color: var(--accent-blue-text); border-color: var(--accent-blue-border); cursor: pointer; }
+.str-label.is-third { background: var(--accent-teal-bg); color: var(--accent-teal-text); border-color: var(--accent-teal-border); cursor: pointer; }
+.str-label.is-fifth { background: var(--accent-purple-bg); color: var(--accent-purple-text); border-color: var(--accent-purple-border); cursor: pointer; }
+.str-label.is-scale { background: #e2e8f0; color: #475569; border-color: #94a3b8; cursor: pointer; }
+.str-label.is-anchor { box-shadow: 0 0 0 3px rgba(37,99,235,0.4); }
 
 /* Each fret cell */
 .fcell {
@@ -918,18 +940,14 @@ body {
   z-index: 1;
 }
 
-/* Nut — narrower column + thicker right border */
-.fcell.is-nut {
-  flex: 0 0 44px;
-}
-.fret-num.is-nut {
-  flex: 0 0 44px;
-}
-.fcell.is-nut::after {
-  width: 6px;
-  background: linear-gradient(to bottom, #e8c97a, #b8952f 40%, #c9a84c 60%, #e0bb6a);
-  box-shadow: 1px 0 3px rgba(0,0,0,0.25);
-  border-radius: 1px;
+/* Nut — a slim border on the first real fret cell, not its own column. Open
+   strings no longer get a dot crowded in next to this bar; that note is
+   shown as a colored ring around the string's own label instead (see
+   .str-label below), which was the actual point of confusion — a dot
+   squeezed directly against a thick black bar reads as clutter, not as "an
+   open note." */
+.fcell.is-first-fret {
+  border-left: 5px solid var(--text-primary);
 }
 
 /* Fret highlight band */
@@ -1945,7 +1963,7 @@ function computeScalePositionNotes(strings, scale, root) {
   const seq = scale.iv.map(iv => (root + iv) % 12); // ascending pitch classes, root first
   const n = seq.length;
   const orderedStrings = [...strings].reverse(); // low string first
-  const MAX_STRING_SPAN = 3; // widest comfortable single-string stretch in one hand position
+  const MAX_STRING_SPAN = 4; // widest comfortable single-string stretch in one hand position
   const MAX_TOTAL_SPAN = 5;  // widest comfortable span across the whole shape, any strings
 
   const findFret = (str, pitch, minFret) => {
@@ -2020,7 +2038,7 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
   const seq = scale.iv.map(iv => (root + iv) % 12);
   const n = seq.length;
   const orderedStrings = [...strings].reverse(); // low string first
-  const MAX_STRING_SPAN = 3;
+  const MAX_STRING_SPAN = 4;
   const MAX_TOTAL_SPAN = 5;
 
   const startPitch = (strings[anchorStringIdx].open + anchorFret) % 12;
@@ -2122,6 +2140,12 @@ function renderChordDiagram(root, quality, voicing, compact = false) {
   // same colored, lettered dot as a fretted note instead of a bare "○" that
   // hides which note (or that a note is even there) from someone who can't
   // already work it out themselves.
+  //
+  // A fretted (not open, not muted) string gets a ghost dot here too — same
+  // size and position as a real one, just an invisible fill/border — so its
+  // string letter (E A D G B e) lines up with the open-string dots and mute
+  // marks instead of sitting in a separate row above that doesn't actually
+  // align with any of them.
   let markers = `<div class="cd-markers" style="position:relative;width:${gridWidth}px;height:${DOT}px">`;
   frets.forEach((f, s) => {
     const left = s * STRING_GAP - DOT / 2;
@@ -2131,6 +2155,8 @@ function renderChordDiagram(root, quality, voicing, compact = false) {
       const pitch = openNotes[s];
       const role = noteRole(pitch, root, pseudoScale);
       markers += `<div class="cd-dot is-${role}" style="top:0;left:${left}px;width:${DOT}px;height:${DOT}px">${noteName(pitch)}</div>`;
+    } else {
+      markers += `<div class="cd-dot cd-dot-ghost" style="top:0;left:${left}px;width:${DOT}px;height:${DOT}px">${STRING_LETTERS[s]}</div>`;
     }
   });
   markers += '</div>';
@@ -2177,26 +2203,35 @@ function renderFretboard(root, scale) {
     : modalView === 'position' ? computeScalePositionNotes(strings, scale, root) : null;
   if (positionNotes && positionNotes.size === 0) positionNotes = null; // couldn't build one — show everything
 
-  // Fret number row
+  // Fret number row (frets 1+ only — the open string isn't "fret 0" on the
+  // grid anymore, see str-label below)
   let html = '<div class="fret-num-row">';
-  for (let f = 0; f <= NUM_FRETS; f++) {
-    html += `<div class="fret-num${f === 0 ? ' is-nut' : ''}" data-fret="${f}">${f === 0 ? '' : f}</div>`;
+  for (let f = 1; f <= NUM_FRETS; f++) {
+    html += `<div class="fret-num" data-fret="${f}">${f}</div>`;
   }
   html += '</div>';
 
-  // String rows
+  // String rows. The open note (fret 0) is shown as a colored ring around
+  // the string's own label instead of a dot squeezed into a cramped column
+  // right against the nut — that's what was actually reading as clutter,
+  // not the nut bar itself.
   for (let si = 0; si < strings.length; si++) {
     const str = strings[si];
-    html += `<div class="str-row"><div class="str-label">${str.label}</div>`;
-    for (let f = 0; f <= NUM_FRETS; f++) {
+    const openNoteIdx = str.open % 12;
+    const openInPosition = !positionNotes || positionNotes.has(`${si}:0`);
+    const openInScale = scaleNotes.has(openNoteIdx) && openInPosition;
+    const openRole = openInScale ? noteRole(openNoteIdx, root, scale) : null;
+    const openIsAnchor = anchorNote && anchorNote.stringIdx === si && anchorNote.fret === 0;
+    const labelCls = 'str-label' + (openRole ? ` is-${openRole}` : '') + (openIsAnchor ? ' is-anchor' : '');
+    const labelBadge = openIsAnchor ? `<div class="anchor-badge">${anchorNote.direction > 0 ? '↑' : '↓'}</div>` : '';
+    html += `<div class="str-row"><div class="${labelCls}" data-string-idx="${si}">${str.label}${labelBadge}</div>`;
+    for (let f = 1; f <= NUM_FRETS; f++) {
       const noteIdx = (str.open + f) % 12;
       const inPosition = !positionNotes || positionNotes.has(`${si}:${f}`);
       const inScale = scaleNotes.has(noteIdx) && inPosition;
-      const isNut   = f === 0;
 
-      let cellCls = 'fcell';
-      if (f > 0)   cellCls += ' has-fret';
-      if (isNut)   cellCls += ' is-nut'; // nut visual handled differently below
+      let cellCls = 'fcell has-fret';
+      if (f === 1) cellCls += ' is-first-fret';
 
       const role = inScale ? noteRole(noteIdx, root, scale) : null;
       const isAnchor = anchorNote && anchorNote.stringIdx === si && anchorNote.fret === f;
@@ -2210,10 +2245,9 @@ function renderFretboard(root, scale) {
     html += '</div>';
   }
 
-  // Nut line: drawn as a thick right-border on cell 0 via the is-nut class
   // Position marker dots
   html += '<div class="fret-dots-row">';
-  for (let f = 0; f <= NUM_FRETS; f++) {
+  for (let f = 1; f <= NUM_FRETS; f++) {
     const isDouble = f === 12;
     const isSingle = FRET_MARKERS.has(f);
     html += `<div class="fret-dot-cell">`;
@@ -2287,12 +2321,24 @@ function initFretDrag() {
 
   // Click a scale note to anchor a directional run there: 1st click ascends
   // from that note, 2nd click (same note) descends, 3rd click clears it.
+  // The open-note ring on a string's label is just as clickable as any
+  // fretted dot — it's the same note, only shown differently now that it's
+  // no longer a dot in the grid.
   fboard.addEventListener('click', e => {
-    const dot = e.target.closest('.ndot');
-    if (!dot) return;
-    const fret = +dot.closest('[data-fret]').dataset.fret;
-    const row = dot.closest('.str-row');
-    const stringIdx = [...fboard.querySelectorAll('.str-row')].indexOf(row);
+    const openLabel = e.target.closest('.str-label[data-string-idx]');
+    const dot = openLabel ? null : e.target.closest('.ndot');
+    if (!openLabel && !dot) return;
+
+    let stringIdx, fret;
+    if (openLabel) {
+      if (!/\bis-(root|third|fifth|scale)\b/.test(openLabel.className)) return; // not a highlighted open note — nothing to anchor
+      stringIdx = +openLabel.dataset.stringIdx;
+      fret = 0;
+    } else {
+      fret = +dot.closest('[data-fret]').dataset.fret;
+      const row = dot.closest('.str-row');
+      stringIdx = [...fboard.querySelectorAll('.str-row')].indexOf(row);
+    }
 
     if (anchorNote && anchorNote.stringIdx === stringIdx && anchorNote.fret === fret) {
       anchorNote = anchorNote.direction > 0 ? { stringIdx, fret, direction: -1 } : null;
@@ -2567,6 +2613,7 @@ function getChordVoicing(root, quality) {
 }
 
 const OPEN_STRING_NOTES = [4, 9, 2, 7, 11, 4]; // low E, A, D, G, B, high e — shared with renderChordDiagram
+const STRING_LETTERS = ['E', 'A', 'D', 'G', 'B', 'e']; // same order, for the label row above the chord diagram
 
 // Minimal "close voicing" triads for the modal's Triad toggle — the standard
 // movable 3-string-family system real guitarists actually learn (verified
