@@ -2034,12 +2034,21 @@ function computeScalePositionNotes(strings, scale, root) {
 // direction — ascending toward higher-pitched strings/frets, or descending
 // toward lower ones — for sketching a fill that starts wherever a bass line
 // actually needs it to.
+//
+// Deliberately has no hand-span limit, unlike the box-pattern walk above —
+// this is meant to trace as far as the fretboard actually goes, not stay
+// within one comfortable hand position. Without a cap, this used to stop
+// right as the run reached the highest string (ascending) or lowest string
+// (descending): the hand-span check would reject continuing on that string,
+// and with no next string left to fall back to at that edge of the neck, it
+// gave up — even though the string itself still had frets left to climb
+// into. Now it only stops when there's truly nowhere left to go (off the
+// edge of the neck, or past fret 0/NUM_FRETS with no string left to catch
+// it) or the run comes back around to the clicked note itself.
 function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anchorFret, direction) {
   const seq = scale.iv.map(iv => (root + iv) % 12);
   const n = seq.length;
   const orderedStrings = [...strings].reverse(); // low string first
-  const MAX_STRING_SPAN = 4;
-  const MAX_TOTAL_SPAN = 5;
 
   const startPitch = (strings[anchorStringIdx].open + anchorFret) % 12;
   const startDegree = seq.indexOf(startPitch);
@@ -2058,9 +2067,7 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
   const place = (orderedIdx, fret) => placements.add(`${strings.length - 1 - orderedIdx}:${fret}`);
 
   let orderedIdx = strings.length - 1 - anchorStringIdx;
-  let firstFretOnString = anchorFret;
   let lastFret = anchorFret;
-  let spanMin = anchorFret, spanMax = anchorFret;
   place(orderedIdx, anchorFret);
 
   const stopAtOctave = n >= 7;
@@ -2068,30 +2075,23 @@ function computeAnchoredPositionNotes(strings, scale, root, anchorStringIdx, anc
   for (let i = 1; i <= maxSteps; i++) {
     const degree = ((startDegree + direction * i) % n + n) % n;
     const pitch = seq[degree];
-    let str = orderedStrings[orderedIdx];
+    const str = orderedStrings[orderedIdx];
     let fret = findFret(str, pitch, lastFret + direction);
-    if (fret !== null && Math.abs(fret - firstFretOnString) > MAX_STRING_SPAN) fret = null;
-    if (fret !== null && Math.max(spanMax, fret) - Math.min(spanMin, fret) > MAX_TOTAL_SPAN) fret = null;
 
     if (fret === null) {
       const nextIdx = orderedIdx + direction;
-      if (nextIdx < 0 || nextIdx >= orderedStrings.length) break; // out of strings — position is complete
+      if (nextIdx < 0 || nextIdx >= orderedStrings.length) break; // off the edge of the neck — run is complete
       const nextStr = orderedStrings[nextIdx];
       const searchFrom = direction > 0 ? Math.max(0, lastFret - 6) : Math.min(NUM_FRETS, lastFret + 6);
-      let nextFret = findFret(nextStr, pitch, searchFrom);
-      if (nextFret !== null && Math.max(spanMax, nextFret) - Math.min(spanMin, nextFret) > MAX_TOTAL_SPAN) nextFret = null;
-      if (nextFret === null) break; // no way to keep going without leaving the hand position
+      const nextFret = findFret(nextStr, pitch, searchFrom);
+      if (nextFret === null) break; // every pitch exists on every string somewhere, but bail cleanly just in case
       orderedIdx = nextIdx;
-      str = nextStr;
       fret = nextFret;
-      firstFretOnString = fret;
     }
 
     place(orderedIdx, fret);
     lastFret = fret;
-    spanMin = Math.min(spanMin, fret);
-    spanMax = Math.max(spanMax, fret);
-    if (stopAtOctave && pitch === startPitch) break; // back to the same note an octave away
+    if (stopAtOctave && pitch === startPitch) break; // back to the clicked note, an octave away
   }
 
   return placements;
