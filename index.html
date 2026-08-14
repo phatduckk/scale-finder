@@ -754,6 +754,17 @@ body {
 .modal-triadview-group { display: none; }
 .modal.is-chord .modal-triadview-group { display: flex; }
 
+/* Only meaningful in Triad mode — Whole Chord's barre shapes don't (yet)
+   support picking a target fret. */
+.modal-fretpick-group { display: none; align-items: center; gap: 6px; }
+.modal.is-simplified .modal-fretpick-group { display: flex; }
+.modal-fretpick-label { font-size: 12px; font-weight: 700; color: var(--text-muted); }
+.modal-fretpick-select {
+  height: 30px; padding: 0 8px; border-radius: 8px; border: 2px solid #e2e8f0;
+  background: #f8fafc; color: #334155; font-family: 'Nunito', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+
 .modal-inst-btn, .modal-view-btn, .modal-triadview-btn {
   padding: 5px 14px;
   border: 2px solid #e2e8f0;
@@ -1359,6 +1370,10 @@ body {
         <button class="modal-triadview-btn on" data-mtriad="full"  onclick="setModalChordSimplified(false)">Whole Chord</button>
         <button class="modal-triadview-btn"    data-mtriad="triad" onclick="setModalChordSimplified(true)">Triad</button>
       </div>
+      <div class="modal-fretpick-group">
+        <label class="modal-fretpick-label" for="modal-fretpick">Near fret</label>
+        <select class="modal-fretpick-select" id="modal-fretpick" onchange="setModalTriadFret(this.value)"></select>
+      </div>
     </div>
     <div class="fboard-wrap">
       <div class="fboard" id="fboard"></div>
@@ -1455,6 +1470,7 @@ let modalRoot = 0;
 let modalScaleName = '';
 let modalChordQuality = null; // set instead of modalScaleName when the modal is showing a chord
 let modalChordSimplified = false; // true = show just the underlying triad of modalChordQuality, not its extensions
+let modalTriadFret = 0; // 0 = "Open" (auto-pick the most compact position) — otherwise Triad mode voices as close to this fret as it can
 let useFlats = false;
 
 function noteName(idx) {
@@ -1832,6 +1848,7 @@ function openChordModal(root, quality) {
   modalScaleName = '';
   modalChordQuality = quality;
   modalChordSimplified = false;
+  modalTriadFret = 0;
   document.getElementById('modal').classList.add('is-chord');
   document.getElementById('modal-alias').textContent = '';
   showModal(root, getModalScaleData());
@@ -1844,6 +1861,11 @@ function openChordModal(root, quality) {
 // same thing, which beats the toggle disappearing entirely for some chords.
 function setModalChordSimplified(simplified) {
   modalChordSimplified = simplified;
+  showModal(modalRoot, getModalScaleData());
+}
+
+function setModalTriadFret(value) {
+  modalTriadFret = +value || 0;
   showModal(modalRoot, getModalScaleData());
 }
 
@@ -1872,6 +1894,8 @@ function showModal(root, scale) {
   document.querySelectorAll('.modal-triadview-btn').forEach(b => {
     b.classList.toggle('on', b.dataset.mtriad === (modalChordSimplified ? 'triad' : 'full'));
   });
+  document.getElementById('modal').classList.toggle('is-simplified', modalChordSimplified);
+  document.getElementById('modal-fretpick').value = modalTriadFret;
 
   litFrets = new Set();
   anchorNote = null;
@@ -1885,7 +1909,7 @@ function showModal(root, scale) {
   const effQuality = effectiveChordQuality();
   let fboardHtml = null;
   if (modalChordQuality && modalChordSimplified) {
-    fboardHtml = renderTriadInversions(root, effQuality);
+    fboardHtml = renderTriadInversions(root, effQuality, modalTriadFret);
   } else if (effQuality) {
     const voicing = getChordVoicing(root, effQuality);
     if (voicing) fboardHtml = renderChordDiagram(root, effQuality, voicing, true);
@@ -2567,7 +2591,14 @@ const PERMS_2 = [[0,1],[1,0]];
 // strings) and bass note — the family itself is never re-chosen here, so
 // calling this across bassIndex 0/1/2 with the same `strings` array is what
 // keeps root/1st/2nd inversion as one consistent, recognizable shape.
-function triadVoicingForFamily(root, quality, bassIndex, strings) {
+// shiftFrets (always 0 or a positive multiple of 12) moves the whole shape
+// up by that many frets — the shape repeats every octave, so this is how
+// "show it up around fret 7" is done: not a different shape, just a later
+// occurrence of the same one. The shift is computed once from root position
+// in renderTriadInversions and reused for every bassIndex here, so all
+// three inversions move together instead of each independently chasing the
+// target fret and ending up scattered.
+function triadVoicingForFamily(root, quality, bassIndex, strings, shiftFrets = 0) {
   const ivs = [...new Set(CHORD_INTERVALS[quality].map(iv => iv % 12))];
   const isPower = ivs.length === 2;
   if (bassIndex >= ivs.length) return null;
@@ -2605,6 +2636,15 @@ function triadVoicingForFamily(root, quality, bassIndex, strings) {
   }
   if (!best) return null;
 
+  if (shiftFrets > 0) {
+    best = {
+      frets: best.frets.map(f => f + shiftFrets),
+      span: best.span,
+      highFret: best.highFret + shiftFrets,
+      startFret: best.startFret + shiftFrets,
+    };
+  }
+
   const fullFrets = new Array(6).fill('x');
   strings.forEach((s, i) => { fullFrets[s] = best.frets[i]; });
   return { frets: fullFrets, startFret: best.startFret, highFret: best.highFret, span: best.span };
@@ -2614,25 +2654,44 @@ function triadVoicingForFamily(root, quality, bassIndex, strings) {
 // inversions at all is comparing how the same notes rearrange across
 // strings, which gets lost if you can only look at one at a time. Whichever
 // family (6th/5th/4th-string-root) gives the most compact root position is
-// the one used for all three — see triadVoicingForFamily.
-function renderTriadInversions(root, quality) {
+// the one used for all three — see triadVoicingForFamily. With a targetFret,
+// that changes to whichever (family, shift) keeps ALL THREE inversions
+// closest to the target on average, not just root — a family whose root
+// happens to land near the target but whose 1st inversion naturally sits
+// far away elsewhere on the neck isn't actually useful to someone playing
+// up around that fret, even though root alone looks like a good match.
+function renderTriadInversions(root, quality, targetFret = 0) {
   const ivs = [...new Set(CHORD_INTERVALS[quality].map(iv => iv % 12))];
   const positions = ivs.length; // 3 for a real triad, 2 for the power chord
   const families = positions === 2 ? POWER_STRING_FAMILIES : TRIAD_STRING_FAMILIES;
 
-  let family = families[0], bestRoot = null;
+  let family = families[0], shiftFrets = 0, bestScore = Infinity;
   for (const strings of families) {
-    const rootVoicing = triadVoicingForFamily(root, quality, 0, strings);
-    if (rootVoicing && (!bestRoot || rootVoicing.span < bestRoot.span
-      || (rootVoicing.span === bestRoot.span && rootVoicing.highFret < bestRoot.highFret))) {
-      bestRoot = rootVoicing;
-      family = strings;
+    const naturals = [];
+    for (let bi = 0; bi < positions; bi++) {
+      const v = triadVoicingForFamily(root, quality, bi, strings, 0);
+      if (!v) break;
+      naturals.push(v);
+    }
+    if (naturals.length !== positions) continue;
+
+    if (targetFret > 0) {
+      // Natural positions are already as low as they go (0-11ish), so the
+      // target (capped at 24) is at most two octaves above any of them.
+      for (let shift = 0; shift <= 24; shift += 12) {
+        const score = naturals.reduce((sum, v) => sum + Math.abs(v.startFret + shift - targetFret), 0);
+        if (score < bestScore) { bestScore = score; family = strings; shiftFrets = shift; }
+      }
+    } else {
+      const rootVoicing = naturals[0];
+      const score = rootVoicing.span * 1000 + rootVoicing.highFret; // span dominates, highFret only breaks ties
+      if (score < bestScore) { bestScore = score; family = strings; shiftFrets = 0; }
     }
   }
 
   let html = `<div class="triad-inversions">`;
   for (let bassIndex = 0; bassIndex < positions; bassIndex++) {
-    const voicing = triadVoicingForFamily(root, quality, bassIndex, family);
+    const voicing = triadVoicingForFamily(root, quality, bassIndex, family, shiftFrets);
     if (!voicing) continue;
     const bassName = noteName((root + ivs[bassIndex]) % 12);
     html += `<div class="triad-inversion">
@@ -3218,6 +3277,16 @@ refreshLibrary().then(restoreSongFromHash);
 // ── INIT ─────────────────────────────────────────────────────────────────────
 
 buildNoteGrid();
+
+(function populateFretPicker() {
+  const select = document.getElementById('modal-fretpick');
+  for (let f = 0; f <= 24; f++) {
+    const opt = document.createElement('option');
+    opt.value = f;
+    opt.textContent = f === 0 ? 'Open' : f;
+    select.appendChild(opt);
+  }
+})();
 syncInstrumentButtons(); // reflect the default immediately; settings may override below
 
 fetchSettings().then(s => {
